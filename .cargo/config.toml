@@ -1,0 +1,2 @@
+[alias]
+run-simple = "run examples/simple/target/wasm32-wasi/debug/simple.wasm"
