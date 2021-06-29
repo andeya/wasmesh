@@ -1,58 +1,97 @@
 use std::collections::HashMap;
-use std::net::SocketAddr;
+use std::ffi::OsString;
+use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
 
 use hyper::{Body, Error, Request, Response, Version};
 use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use rand::Rng;
+use structopt::StructOpt;
 
 use wasp_sdk::proto::{RequestData, ResponseData};
 
 use crate::wasi::Instance;
+
+#[derive(StructOpt, Debug)]
+pub struct ServeOpt {
+    pub(crate) addr: String,
+    pub(crate) command: String,
+    /// WASI pre-opened directory
+    #[structopt(long = "dir", multiple = true, group = "wasi")]
+    pub(crate) pre_opened_directories: Vec<String>,
+    /// Application arguments
+    #[structopt(multiple = true, parse(from_os_str))]
+    pub(crate) args: Vec<OsString>,
+}
+
+static mut SERVER: Server = Server::new();
+
+pub(crate) fn serve(serve_options: ServeOpt) -> Result<(), anyhow::Error> {
+    let mut addr = serve_options.addr.parse::<SocketAddrV4>()
+                                .and_then(|a| Ok(SocketAddr::V4(a)));
+    if addr.is_err() {
+        addr = serve_options.addr.parse::<SocketAddrV6>()
+                            .and_then(|a| Ok(SocketAddr::V6(a)));
+    }
+    Server::serve(serve_options.command, addr?)
+        .map_err(|e| anyhow::Error::msg(format!("{}", e)))
+}
 
 pub(crate) struct Server {
     instances: Vec<Instance>,
 }
 
 impl Server {
-    pub(crate) fn new() -> Result<Server, Box<dyn std::error::Error>> {
-        let count = usize::max(num_cpus::get(), 1);
-        let mut instances = vec![];
-        for _ in 0..count {
-            instances.push(Instance::new()?);
+    pub(crate) const fn new() -> Self {
+        Server {
+            instances: vec![],
         }
-        Ok(Server {
-            instances,
-        })
     }
-    pub(crate) async fn serve(&'static self, addr: SocketAddr) {
-        pretty_env_logger::init();
+
+    fn serve(wasm_path: String, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+        let count = usize::max(num_cpus::get(), 1);
+        unsafe {
+            for _ in 0..count {
+                SERVER.instances.push(Instance::new(&wasm_path)?)
+            }
+            println!("num_cpus={}==========instances={}", count, SERVER.instances.len());
+        }
         // The closure inside `make_service_fn` is run for each connection,
         // creating a 'service' to handle requests for that specific connection.
         let make_service = make_service_fn(|socket: &AddrStream| {
             let _remote_addr = socket.remote_addr();
-            async move {
+            async {
                 // This is the `Service` that will handle the connection.
                 // `service_fn` is a helper to convert a function that
                 // returns a Response into a `Service`.
-                Ok::<_, Error>(service_fn(move |req|
-                    self.handle(req)
-                ))
+                Ok::<_, Error>(service_fn(|req| async {
+                    let r = unsafe { &SERVER }.handle(req).await;
+                    if let Err(ref e) = r {
+                        eprintln!("{}", e)
+                    }
+                    r
+                }))
             }
         });
-        let server = hyper::Server::bind(&addr).serve(make_service);
-        println!("Listening on http://{}", addr);
-        if let Err(e) = server.await {
-            eprintln!("server error: {}", e);
-        }
+
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let srv = hyper::Server::bind(&addr).serve(make_service);
+            println!("Listening on http://{}", addr);
+            if let Err(e) = srv.await {
+                eprintln!("SERVER error: {}", e);
+            }
+        });
+        Ok(())
     }
 
-    async fn handle(&self, req: Request<Body>) -> Result<Response<Body>, String> {
+    async fn handle(&'static self, req: Request<Body>) -> Result<Response<Body>, String> {
         let req = new_request_data(req).await;
         let b = serde_json::to_vec(&req).or_else(|e| Err(format!("{}", e)))?;
         let mut rng = rand::thread_rng();
         let i: usize = rng.gen_range(0..self.instances.len());
-        self.instances[i]
+        println!("call=======instances[{}]========", i);
+        self.instances.get(i).unwrap()
             .std_write(b)
             .and_then(Instance::call)
             .and_then(|instance| instance.std_read(|r| {

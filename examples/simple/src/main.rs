@@ -16,5 +16,8 @@ fn main() {
 
 fn handle(req: RequestData) -> ResponseData {
     eprintln!("[WASI-Simple] RequestData: {:?}", req);
-    ResponseData::from_request_data(req, "this is ResponseData".as_bytes().to_vec())
+    let body = "this is ResponseData".as_bytes().to_vec();
+    let resp = ResponseData::from_request_data(req, body);
+    eprintln!("[WASI-Simple] ResponseData: {:?}", resp);
+    resp
 }

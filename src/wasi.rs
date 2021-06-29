@@ -1,4 +1,3 @@
-use std::env;
 use std::io::Write;
 
 use wasmer::{FunctionType, Module, Store};
@@ -12,9 +11,7 @@ pub(crate) struct Instance {
 }
 
 impl Instance {
-    pub(crate) fn new() -> Result<Instance, Box<dyn std::error::Error>> {
-        let args: Vec<String> = env::args().collect();
-        let wasm_path = args.get(1).ok_or("missing wasm file path argument")?;
+    pub(crate) fn new(wasm_path: &String) -> Result<Instance, Box<dyn std::error::Error>> {
         let wasm_bytes = std::fs::read(wasm_path)?;
 
         // Create a Store.
@@ -32,7 +29,7 @@ impl Instance {
         // First, we create the `WasiEnv` with the stdio pipes
         let input = Pipe::new();
         let output = Pipe::new();
-        let mut wasi_env = WasiState::new("hello")
+        let mut wasi_env = WasiState::new("wasp")
             .preopen_dir("./")?
             .stdin(Box::new(input))
             .stdout(Box::new(output))
@@ -44,7 +41,7 @@ impl Instance {
         let import_object = wasi_env.import_object(&module)?;
         let instance = wasmer::Instance::new(&module, &import_object)?;
 
-        println!("start serving...");
+        println!("new a instance");
 
         Ok(Instance {
             instance,
