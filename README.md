@@ -1,2 +1,2 @@
 # wasp
-WebAssembly Server Proxy
+WebAssembly Service Porter.
