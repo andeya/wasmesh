@@ -5,6 +5,8 @@ use wasmer_compiler_cranelift::Cranelift;
 use wasmer_engine_universal::Universal;
 use wasmer_wasi::{Pipe, WasiEnv, WasiFile, WasiState};
 
+use crate::server::ServeOpt;
+
 #[derive(Clone)]
 pub(crate) struct Instance {
     pub instance: wasmer::Instance,
@@ -12,8 +14,8 @@ pub(crate) struct Instance {
 }
 
 impl Instance {
-    pub(crate) fn new(wasm_path: &String) -> Result<Instance, Box<dyn std::error::Error>> {
-        let wasm_bytes = std::fs::read(wasm_path)?;
+    pub(crate) fn new(serve_options: &ServeOpt) -> Result<Instance, Box<dyn std::error::Error>> {
+        let wasm_bytes = std::fs::read(serve_options.get_wasm_path())?;
 
         // Create a Store.
         // Note that we don't need to specify the engine/compiler if we want to use
@@ -30,8 +32,9 @@ impl Instance {
         // First, we create the `WasiEnv` with the stdio pipes
         let input = Pipe::new();
         let output = Pipe::new();
-        let mut wasi_env = WasiState::new("wasp")
-            .preopen_dir("./")?
+        let mut wasi_env = WasiState::new(serve_options.get_name())
+            .preopen_dirs(serve_options.get_preopen_dirs())?
+            .args(serve_options.to_args_unchecked())
             .stdin(Box::new(input))
             .stdout(Box::new(output))
             .finalize()?;
@@ -42,7 +45,7 @@ impl Instance {
         let import_object = wasi_env.import_object(&module)?;
         let instance = wasmer::Instance::new(&module, &import_object)?;
 
-        println!("new a instance");
+        println!("Created a instance");
 
         Ok(Instance {
             instance,
@@ -50,9 +53,9 @@ impl Instance {
         })
     }
     pub(crate) fn call(&self) -> Result<&Self, Box<dyn std::error::Error>> {
-        println!("Call WASI `_wasp_serve` function...");
-        // And we just call the `_wasp_serve` function!
-        let start = self.instance.exports.get_function("_wasp_serve")?;
+        println!("Call WASI `_wasp_serve_event` function...");
+        // And we just call the `_wasp_serve_event` function!
+        let start = self.instance.exports.get_function("_wasp_serve_event")?;
         start.call(&[])?;
         Ok(self)
     }

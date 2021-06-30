@@ -24,7 +24,6 @@ pretty_env_logger = "0.4"
 
 wapm-cli = "0.5.1"
 structopt = { version = "0.3", features = ["color"] }
-#atty = "0.2"
 anyhow = "1"
 
 [dev-dependencies]

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::ffi::OsString;
-use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::net::{AddrParseError, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 use hyper::{Body, Error, Request, Response, Version};
 use hyper::server::conn::AddrStream;
@@ -24,16 +24,34 @@ pub struct ServeOpt {
     pub(crate) args: Vec<OsString>,
 }
 
+impl ServeOpt {
+    pub(crate) fn parse_addr(&self) -> Result<SocketAddr, AddrParseError> {
+        let mut addr = self.addr.parse::<SocketAddrV4>()
+                           .and_then(|a| Ok(SocketAddr::V4(a)));
+        if addr.is_err() {
+            addr = self.addr.parse::<SocketAddrV6>()
+                       .and_then(|a| Ok(SocketAddr::V6(a)));
+        }
+        addr
+    }
+    pub(crate) fn get_name(&self) -> &String {
+        &self.command
+    }
+    pub(crate) fn get_wasm_path(&self) -> &String {
+        &self.command
+    }
+    pub(crate) fn get_preopen_dirs(&self) -> &Vec<String> {
+        &self.pre_opened_directories
+    }
+    pub(crate) fn to_args_unchecked(&self) -> impl IntoIterator<Item=&str> {
+        self.args.iter().map(|v| v.to_str().unwrap()).collect::<Vec<&str>>()
+    }
+}
+
 static mut SERVER: Server = Server::new();
 
 pub(crate) fn serve(serve_options: ServeOpt) -> Result<(), anyhow::Error> {
-    let mut addr = serve_options.addr.parse::<SocketAddrV4>()
-                                .and_then(|a| Ok(SocketAddr::V4(a)));
-    if addr.is_err() {
-        addr = serve_options.addr.parse::<SocketAddrV6>()
-                            .and_then(|a| Ok(SocketAddr::V6(a)));
-    }
-    Server::serve(serve_options.command, addr?)
+    Server::serve(serve_options)
         .map_err(|e| anyhow::Error::msg(format!("{}", e)))
 }
 
@@ -48,10 +66,11 @@ impl Server {
         }
     }
 
-    fn serve(wasm_path: String, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+    fn serve(serve_options: ServeOpt) -> Result<(), Box<dyn std::error::Error>> {
+        let addr = serve_options.parse_addr()?;
         let count = usize::max(num_cpus::get(), 1);
         unsafe {
-            let ins = Instance::new(&wasm_path)?;
+            let ins = Instance::new(&serve_options)?;
             for _ in 0..count - 1 {
                 SERVER.instances.push(ins.clone());
             }
@@ -75,7 +94,6 @@ impl Server {
                 }))
             }
         });
-
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let srv = hyper::Server::bind(&addr).serve(make_service);

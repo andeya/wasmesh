@@ -1,8 +1,7 @@
 use std::{env, path};
 
 use structopt::{clap::AppSettings, StructOpt};
-
-use wapm_cli::{commands /*logging*/};
+use wapm_cli::commands;
 #[cfg(feature = "update-notifications")]
 use wapm_cli::update_notifier;
 
@@ -105,10 +104,6 @@ enum Command {
 
 fn main() {
     pretty_env_logger::init();
-    // let is_atty = atty::is(atty::Stream::Stdout);
-    // if let Err(e) = logging::set_up_logging(is_atty) {
-    //     eprintln!("Error: {}", e);
-    // }
 
     #[cfg(feature = "telemetry")]
         let _guard = {

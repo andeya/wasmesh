@@ -1,9 +1,11 @@
+use std::env;
 use std::io::Write;
 
 use wasp_sdk::proto::{RequestData, ResponseData};
 
 #[no_mangle]
-fn _wasp_serve() {
+fn _wasp_serve_event() {
+    eprintln!("Args: {:?}", env::args().collect::<Vec<String>>());
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
     let req = RequestData::from_reader(stdin.lock());
