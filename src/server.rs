@@ -51,9 +51,11 @@ impl Server {
     fn serve(wasm_path: String, addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
         let count = usize::max(num_cpus::get(), 1);
         unsafe {
-            for _ in 0..count {
-                SERVER.instances.push(Instance::new(&wasm_path)?)
+            let ins = Instance::new(&wasm_path)?;
+            for _ in 0..count - 1 {
+                SERVER.instances.push(ins.clone());
             }
+            SERVER.instances.push(ins.clone());
             println!("num_cpus={}==========instances={}", count, SERVER.instances.len());
         }
         // The closure inside `make_service_fn` is run for each connection,

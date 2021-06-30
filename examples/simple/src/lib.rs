@@ -1,14 +1,19 @@
+use std::io::Write;
+
 use wasp_sdk::proto::{RequestData, ResponseData};
 
-fn main() {
+#[no_mangle]
+fn _wasp_serve() {
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
     let req = RequestData::from_reader(stdin.lock());
     match req {
         Ok(req) => {
-            if let Err(e) = handle(req).to_writer(stdout.lock()) {
+            let mut w = stdout.lock();
+            if let Err(e) = handle(req).to_writer(&mut w) {
                 eprintln!("[WASI-Simple] {}", e);
             }
+            let _ = w.flush();
         }
         Err(e) => eprintln!("[WASI-Simple] {}", e),
     }

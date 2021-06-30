@@ -5,6 +5,7 @@ use wasmer_compiler_cranelift::Cranelift;
 use wasmer_engine_universal::Universal;
 use wasmer_wasi::{Pipe, WasiEnv, WasiFile, WasiState};
 
+#[derive(Clone)]
 pub(crate) struct Instance {
     pub instance: wasmer::Instance,
     pub wasi_env: WasiEnv,
@@ -49,9 +50,9 @@ impl Instance {
         })
     }
     pub(crate) fn call(&self) -> Result<&Self, Box<dyn std::error::Error>> {
-        println!("Call WASI `_start` function...");
-        // And we just call the `_start` function!
-        let start = self.instance.exports.get_function("_start")?;
+        println!("Call WASI `_wasp_serve` function...");
+        // And we just call the `_wasp_serve` function!
+        let start = self.instance.exports.get_function("_wasp_serve")?;
         start.call(&[])?;
         Ok(self)
     }
