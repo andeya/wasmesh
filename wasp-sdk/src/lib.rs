@@ -1,3 +1,5 @@
+pub use wasp_macros::handler;
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -7,3 +9,5 @@ mod tests {
 }
 
 pub mod proto;
+pub mod errors;
+pub mod guest;

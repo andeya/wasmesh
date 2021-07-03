@@ -1,7 +1,7 @@
 use std::env;
 use std::io::Write;
 
-use wasp_sdk::proto::{RequestData, ResponseData};
+use wasp_sdk::proto::{Message, RequestData, ResponseData};
 
 #[no_mangle]
 fn _wasp_serve_event() {
@@ -27,4 +27,9 @@ fn handle(req: RequestData) -> ResponseData {
     let resp = ResponseData::from_request_data(req, body);
     eprintln!("[WASI-Simple] ResponseData: {:?}", resp);
     resp
+}
+
+#[wasp_sdk::handler]
+fn handler(msg: Message) -> Message {
+    msg
 }

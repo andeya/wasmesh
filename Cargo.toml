@@ -30,7 +30,7 @@ anyhow = "1"
 wasp-sdk = { path = "wasp-sdk" }
 
 [workspace]
-members = ["wasp-sdk"]
+members = ["wasp-sdk", "wasp-macros"]
 exclude = ["examples"]
 
 [[bin]]
