@@ -8,68 +8,19 @@ use serde_repr::*;
 
 use crate::errors::*;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RequestData {
-    pub method: String,
-
-    /// The request's URI
-    pub uri: String,
-
-    /// The request's version
-    pub version: String,
-
-    /// The request's headers
-    pub headers: HashMap<String, String>,
-
-    pub body: Vec<u8>,
-}
-
-impl RequestData {
-    pub fn from_reader(r: impl std::io::Read) -> serde_json::Result<Self> {
-        serde_json::from_reader(r)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ResponseData {
-    pub status: u16,
-
-    /// The request's version
-    pub version: String,
-
-    /// The request's headers
-    pub headers: HashMap<String, String>,
-
-    pub body: Vec<u8>,
-}
-
-impl ResponseData {
-    pub fn from_request_data(req: RequestData, body: Vec<u8>) -> ResponseData {
-        ResponseData {
-            status: 200,
-            version: req.version,
-            headers: HashMap::new(),
-            body: body,
-        }
-    }
-    pub fn to_writer(&self, writer: impl std::io::Write) -> serde_json::Result<()> {
-        serde_json::to_writer(writer, self)
-    }
-}
-
 /// Wasp message identifier.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Default)]
 pub struct Message {
     /// Service call the message is associated with.
-    uri: String,
+    pub uri: String,
     /// Message type.
-    message_type: MessageType,
+    pub mtype: MessageType,
     /// Ordered sequence number identifying the message.
-    message_seqid: i32,
-    /// Content type.
-    content_type: String,
-    /// Message content.
-    content: Vec<u8>,
+    pub seqid: i32,
+    /// Message headers.
+    pub headers: HashMap<String, String>,
+    /// Message body bytes.
+    pub body: Vec<u8>,
 }
 
 impl Message {
@@ -77,16 +28,28 @@ impl Message {
     /// with message type `message_type` and sequence number `sequence_number`.
     pub fn new<S: Into<String>>(
         uri: S,
-        message_type: MessageType,
-        message_seqid: i32,
+        mtype: MessageType,
+        seqid: i32,
     ) -> Self {
         Message {
             uri: uri.into(),
-            message_type,
-            message_seqid,
-            content_type: String::new(),
-            content: vec![],
+            mtype,
+            seqid,
+            headers: HashMap::new(),
+            body: vec![],
         }
+    }
+    pub fn set_headers(mut self, headers: HashMap<String, String>) -> Self {
+        self.headers = headers;
+        self
+    }
+    pub fn set_header<K: Into<String>, V: Into<String>>(mut self, key: K, value: V) -> Self {
+        self.headers.insert(key.into(), value.into());
+        self
+    }
+    pub fn set_body<T: Into<Vec<u8>>>(mut self, body: T) -> Self {
+        self.body = body.into();
+        self
     }
 }
 
@@ -94,6 +57,7 @@ impl Message {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum MessageType {
+    Unknown = 0x00u8,
     /// Service-call request.
     Call = 0x01u8,
     /// Service-call response.
@@ -104,9 +68,16 @@ pub enum MessageType {
     OneWay = 0x04u8,
 }
 
+impl Default for MessageType {
+    fn default() -> Self {
+        MessageType::Unknown
+    }
+}
+
 impl Display for MessageType {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
+            MessageType::Unknown => write!(f, "Unknown"),
             MessageType::Call => write!(f, "Call"),
             MessageType::Reply => write!(f, "Reply"),
             MessageType::Exception => write!(f, "Exception"),

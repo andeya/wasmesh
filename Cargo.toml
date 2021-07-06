@@ -15,7 +15,7 @@ wasmer-engine-universal = "2.0.0"
 wasmer-wasi = "2.0.0"
 tokio = { version = "1", features = ["full"] }
 hyper = { version = "0.14.9", features = ["full"] }
-num_cpus = "1.0"
+#num_cpus = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.64"
 rand = "0.8.4"

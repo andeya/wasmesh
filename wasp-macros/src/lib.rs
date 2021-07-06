@@ -2,17 +2,9 @@ use proc_macro::TokenStream;
 
 use quote::quote;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
-
 /// Entry pointer of function, take function handler as argument.
 ///
-/// `target fn type: Fn(Message) -> Message`
+/// `target fn type: Fn(wasp_sdk::proto::Message) -> wasp_sdk::proto::Message`
 /// command to check expanded code: `cargo +nightly rustc -- -Zunstable-options --pretty=expanded`
 #[proc_macro_attribute]
 #[cfg(not(test))] // Work around for rust-lang/rust#62127
@@ -22,8 +14,8 @@ pub fn handler(_args: TokenStream, item: TokenStream) -> TokenStream {
     let handler_ident = input.sig.ident;
     let expanded = quote! {
         #[no_mangle]
-        pub extern "C" fn _wasp_handler(size: i32) {
-            wasp_sdk::guest::run_handler(size, #handler_ident);
+        pub extern "C" fn _wasp_guest_handler(thread_id: i32, ctx_id: i32, size: i32) {
+            wasp_sdk::guest::run_handler(thread_id, ctx_id, size, #handler_ident)
         }
     };
     handler_block.extend(TokenStream::from(expanded));

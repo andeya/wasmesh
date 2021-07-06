@@ -1,35 +1,21 @@
+/// ab（apache benchmark）
+/// `ab -c 100 -n 10000 http://127.0.0.1:8080/`
+
 use std::env;
-use std::io::Write;
 
-use wasp_sdk::proto::{Message, RequestData, ResponseData};
+use rand::Rng;
 
-#[no_mangle]
-fn _wasp_serve_event() {
-    eprintln!("Args: {:?}", env::args().collect::<Vec<String>>());
-    let stdin = std::io::stdin();
-    let stdout = std::io::stdout();
-    let req = RequestData::from_reader(stdin.lock());
-    match req {
-        Ok(req) => {
-            let mut w = stdout.lock();
-            if let Err(e) = handle(req).to_writer(&mut w) {
-                eprintln!("[WASI-Simple] {}", e);
-            }
-            let _ = w.flush();
-        }
-        Err(e) => eprintln!("[WASI-Simple] {}", e),
-    }
-}
-
-fn handle(req: RequestData) -> ResponseData {
-    eprintln!("[WASI-Simple] RequestData: {:?}", req);
-    let body = "this is ResponseData".as_bytes().to_vec();
-    let resp = ResponseData::from_request_data(req, body);
-    eprintln!("[WASI-Simple] ResponseData: {:?}", resp);
-    resp
-}
+use wasp_sdk::proto::Message;
 
 #[wasp_sdk::handler]
-fn handler(msg: Message) -> Message {
+fn handler(mut msg: Message) -> Message {
+    // eprintln!("Args: {:?}", env::args().collect::<Vec<String>>());
+    // eprintln!("[WASI-Simple] CallMessage: {:?}", msg);
+    // let mut rng = rand::thread_rng();
+    // let y: u8 = rng.gen();
+    let y: u8 = 10;
+    let body = format!("this is ReplyMessage {}", "=".repeat(y as usize)).as_bytes().to_vec();
+    msg = msg.set_body(body);
+    // eprintln!("[WASI-Simple] ReplyMessage: {:?}", msg);
     msg
 }

@@ -9,3 +9,4 @@ crate-type = ['cdylib']
 
 [dependencies]
 wasp-sdk = { path = "../../wasp-sdk" }
+rand = "0.8.4"
