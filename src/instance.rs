@@ -1,6 +1,6 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::{Arc, RwLock};
 
 use wasmer::{Function, FunctionType, import_namespace, ImportObject, Memory, MemoryView, Module, Store};
 use wasmer_compiler_cranelift::Cranelift;
@@ -13,7 +13,7 @@ use crate::server::ServeOpt;
 pub(crate) struct Instance {
     instance: Option<wasmer::Instance>,
     wasi_env: Option<WasiEnv>,
-    message_cache: Option<Arc<RwLock<HashMap<i32, Vec<u8>>>>>,
+    message_cache: Option<RefCell<HashMap<i32, Vec<u8>>>>,
 }
 
 pub(crate) const INSTANCES_COUNT: usize = 16;
@@ -91,7 +91,7 @@ impl Instance {
         Ok(Instance {
             instance: Some(instance),
             wasi_env: Some(wasi_env),
-            message_cache: Some(Arc::new(RwLock::new(HashMap::with_capacity(1024)))),
+            message_cache: Some(RefCell::new(HashMap::with_capacity(1024))),
         }.init())
     }
     fn register_import_object(import_object: &mut ImportObject, store: &Store) {
@@ -123,10 +123,10 @@ impl Instance {
         self.instance.as_ref().unwrap()
     }
     fn take_msg_data(&self, ctx_id: i32) -> Option<Vec<u8>> {
-        self.message_cache.as_ref().unwrap().write().unwrap().remove(&ctx_id)
+        self.message_cache.as_ref().unwrap().borrow_mut().remove(&ctx_id)
     }
     fn cache_msg_data(&self, ctx_id: i32, data: Vec<u8>) {
-        self.message_cache.as_ref().unwrap().write().unwrap().insert(ctx_id, data);
+        self.message_cache.as_ref().unwrap().borrow_mut().insert(ctx_id, data);
     }
     pub(crate) fn call_guest_handler(&self, thread_id: i32, ctx_id: i32, size: i32) {
         loop {
