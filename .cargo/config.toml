@@ -1,2 +1,2 @@
 [alias]
-run-simple = "run -- serve 127.0.0.1:8080 examples/simple/target/wasm32-wasi/debug/simple.wasm -- -k=v x"
+run-simple = "run -- serve 127.0.0.1:9090 examples/simple/target/wasm32-wasi/debug/simple.wasm -- -k=v x"
