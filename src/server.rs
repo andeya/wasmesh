@@ -3,11 +3,12 @@ use std::net::{AddrParseError, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::sync::atomic::{AtomicI32, Ordering};
 
 use hyper::{Body, Error, Request, Response};
+use hyper::body::Bytes;
 use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use structopt::StructOpt;
 
-use wasp_sdk::proto::{Message, MessageType};
+use wasp_sdk::message::{FlatBufferBuilder, HeaderBuilder, Message, MessageBuilder, MessageType, RefMessage};
 
 use crate::instance::{self, instance_ref, INSTANCES_COUNT};
 
@@ -97,17 +98,15 @@ impl Server {
 
         // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
 
-        let call_msg = req_to_call_msg(req).await;
-        let data = serde_json::to_vec(&call_msg).or_else(|e| Err(format!("{}", e)))?;
+        let (data, start) = req_to_call_msg(req).await;
+        let data = &data[start..];
         let ins = instance_ref(thread_id);
-        ins.call_guest_handler(thread_id as i32, ctx_id, ins.set_guest_request(ctx_id, data));
-        let reply_msg: Message = serde_json::from_slice(
-            ins
-                .get_guest_response(ctx_id)
-                .as_slice()
-        ).unwrap();
+        ins.call_guest_handler(thread_id as i32, ctx_id, ins.set_guest_request(ctx_id, data.to_vec()));
+
+        let reply_msg = RefMessage::from_vec(ins.get_guest_response(ctx_id));
+
         // println!("========= reply_msg={:?}", reply_msg);
-        Ok(msg_to_resp(reply_msg))
+        Ok(msg_to_resp(reply_msg.as_ref()))
     }
 }
 
@@ -130,35 +129,47 @@ fn current_thread_id() -> usize {
 
 fn msg_to_resp(msg: Message) -> Response<Body> {
     let mut resp = Response::builder();
-    for x in msg.headers.iter() {
-        resp = resp.header(x.0, x.1);
-    }
-    match msg.mtype {
-        MessageType::Reply => {
-            resp = resp.status(200);
-        },
-        _ => {
-            resp = resp.status(
-                msg.headers
-                   .get("status")
-                   .unwrap_or(&"200".to_string())
-                   .parse::<u16>().unwrap_or(200));
+    resp = resp.status(200);
+    if let Some(headers) = msg.headers() {
+        for x in headers {
+            let key = x.key().unwrap();
+            let value = x.value().unwrap();
+            if key == "status" {
+                resp = resp.status(value.parse::<u16>().unwrap_or(200));
+            } else {
+                resp = resp.header(x.key().unwrap(), x.value().unwrap());
+            }
         }
     }
-    resp.body(Body::from(msg.body)).unwrap()
+    let body = msg.body().unwrap_or(&[]).to_vec();
+    resp.body(Body::from(body)).unwrap()
 }
 
-async fn req_to_call_msg(req: Request<Body>) -> Message {
-    let mut msg = Message::new(req.uri().to_string(), MessageType::Call, rand::random());
+async fn req_to_call_msg(req: Request<Body>) -> (Vec<u8>, usize) {
+    let mut builder = FlatBufferBuilder::new();
+    let mut call_builder = MessageBuilder::new(&mut builder);
+    call_builder.add_seqid(rand::random());
+    call_builder.add_mtype(MessageType::Call);
+    call_builder.add_uri(FlatBufferBuilder::new().create_string(req.uri().to_string().as_str()));
     let (parts, body) = req.into_parts();
-    let body = hyper::body::to_bytes(body).await.map_or_else(|_| vec![], |v| v.to_vec());
+    let body = hyper::body::to_bytes(body).await.unwrap_or(Bytes::new());
+    call_builder.add_body(FlatBufferBuilder::new().create_vector_direct(body.as_ref()));
+
+    let mut hbuilder_vec = vec![];
     for x in parts.headers.iter() {
-        msg = msg.set_header(
-            x.0.to_string(),
-            x.1
-             .to_str()
-             .map_or_else(|_| String::new(), |s| s.to_string()),
-        );
+        let mut hbuilder = FlatBufferBuilder::new();
+        let mut hbuilder = HeaderBuilder::new(&mut hbuilder);
+        hbuilder.add_key(FlatBufferBuilder::new().create_string(x.0.as_str()));
+        hbuilder.add_value(FlatBufferBuilder::new().create_string(x.1.to_str().unwrap_or("")));
+        hbuilder_vec.push(hbuilder.finish());
     }
-    msg.set_body(body)
+
+    let mut hsbuilder = FlatBufferBuilder::new();
+    let hsoffset = hsbuilder.create_vector(&hbuilder_vec);
+    call_builder.add_headers(hsoffset);
+
+    let offset = call_builder.finish();
+    builder.finish_minimal(offset);
+    builder.collapse()
+    // let reply_msg_bytes = builder.finished_data();
 }
