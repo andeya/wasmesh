@@ -1,4 +1,4 @@
-use crate::proto::Message;
+use crate::message::Message;
 
 // #[cfg(target_arch = "wasm32")]
 extern "C" {

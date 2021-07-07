@@ -173,7 +173,7 @@ impl Instance {
         }
     }
     fn get_view_bytes(&self, offset: usize, size: usize) -> Vec<u8> {
-        println!("get_view_bytes: offset:{}, size:{}", offset, size);
+        // println!("get_view_bytes: offset:{}, size:{}", offset, size);
         let view = self.get_view();
         view[offset..(offset + size)]
             .iter()

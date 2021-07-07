@@ -5,7 +5,8 @@ use std::env;
 
 use rand::Rng;
 
-use wasp_sdk::proto::Message;
+use wasp_sdk::bytes::Bytes;
+use wasp_sdk::message::Message;
 
 #[wasp_sdk::handler]
 fn handler(mut msg: Message) -> Message {
@@ -14,8 +15,8 @@ fn handler(mut msg: Message) -> Message {
     // let mut rng = rand::thread_rng();
     // let y: u8 = rng.gen();
     let y: u8 = 10;
-    let body = format!("this is ReplyMessage {}", "=".repeat(y as usize)).as_bytes().to_vec();
-    msg = msg.set_body(body);
+    let body = format!("this is ReplyMessage {}", "=".repeat(y as usize));
+    msg.set_body(Bytes::from(body));
     // eprintln!("[WASI-Simple] ReplyMessage: {:?}", msg);
     msg
 }

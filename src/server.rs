@@ -6,7 +6,8 @@ use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use structopt::StructOpt;
 
-use wasp_sdk::proto::{Message, MessageType};
+use wasp_sdk::bytes::Bytes;
+use wasp_sdk::message::{Message, MessageType};
 
 use crate::instance::{self, instance_ref, INSTANCES_COUNT};
 
@@ -97,7 +98,7 @@ impl Server {
         let ins = instance_ref(thread_id);
         let ctx_id = ins.gen_ctx_id();
 
-        // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
+        println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
 
         let data = serde_json::to_vec(&call_msg).or_else(|e| Err(format!("{}", e)))?;
         ins.call_guest_handler(thread_id as i32, ctx_id, ins.set_guest_request(ctx_id, data));
@@ -141,16 +142,21 @@ fn msg_to_resp(msg: Message) -> Response<Body> {
 }
 
 async fn req_to_call_msg(req: Request<Body>) -> Message {
-    let mut msg = Message::new(req.uri().to_string(), MessageType::Call, rand::random());
+    let mut msg = Message::new();
+    msg.set_uri(req.uri().to_string());
+    msg.set_seqid(rand::random());
+    msg.set_mtype(MessageType::Call);
     let (parts, body) = req.into_parts();
-    let body = hyper::body::to_bytes(body).await.map_or_else(|_| vec![], |v| v.to_vec());
+    let body = hyper::body::to_bytes(body).await.map_or_else(|_| Bytes::new(), |v| v);
+
     for x in parts.headers.iter() {
-        msg = msg.set_header(
+        msg.headers.insert(
             x.0.to_string(),
             x.1
              .to_str()
              .map_or_else(|_| String::new(), |s| s.to_string()),
         );
     }
-    msg.set_body(body)
+    msg.set_body(body);
+    msg
 }
