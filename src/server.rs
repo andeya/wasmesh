@@ -97,7 +97,7 @@ impl Server {
         let ins = instance_ref(thread_id);
         let ctx_id = ins.gen_ctx_id();
 
-        println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
+        // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
         let data = call_msg.write_to_bytes().or_else(|e| Err(format!("{}", e)))?;
         ins.call_guest_handler(thread_id as i32, ctx_id, ins.set_guest_request(ctx_id, data));
         let reply_msg = Message::parse_from_bytes(ins

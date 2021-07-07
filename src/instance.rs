@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use wasmer::{Function, FunctionType, import_namespace, ImportObject, Memory, MemoryView, Module, Store};
+#[cfg(feature = "cranelift")]
 use wasmer_compiler_cranelift::Cranelift;
+#[cfg(feature = "llvm")]
+use wasmer_compiler_llvm::LLVM;
 use wasmer_engine_universal::Universal;
 use wasmer_wasi::{WasiEnv, WasiState};
 
@@ -64,7 +67,14 @@ impl Instance {
         // Note that we don't need to specify the engine/compiler if we want to use
         // the default provided by Wasmer.
         // You can use `Store::default()` for that.
-        let store = Store::new(&Universal::new(Cranelift::default()).engine());
+
+        let store: Store;
+        #[cfg(feature = "cranelift")] {
+            store = Store::new(&Universal::new(Cranelift::default()).engine());
+        }
+        #[cfg(feature = "llvm")] {
+            store = Store::new(&Universal::new(LLVM::default()).engine());
+        }
 
         println!("Compiling module...");
 
