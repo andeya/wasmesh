@@ -6,8 +6,7 @@ use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use structopt::StructOpt;
 
-use wasp_sdk::bytes::Bytes;
-use wasp_sdk::message::{Message, MessageType};
+use wasp_sdk::*;
 
 use crate::instance::{self, instance_ref, INSTANCES_COUNT};
 
@@ -99,13 +98,10 @@ impl Server {
         let ctx_id = ins.gen_ctx_id();
 
         println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
-
-        let data = serde_json::to_vec(&call_msg).or_else(|e| Err(format!("{}", e)))?;
+        let data = call_msg.write_to_bytes().or_else(|e| Err(format!("{}", e)))?;
         ins.call_guest_handler(thread_id as i32, ctx_id, ins.set_guest_request(ctx_id, data));
-        let reply_msg: Message = serde_json::from_slice(
-            ins
-                .get_guest_response(ctx_id)
-                .as_slice()
+        let reply_msg = Message::parse_from_bytes(ins
+            .get_guest_response(ctx_id).as_slice()
         ).unwrap();
         // println!("========= reply_msg={:?}", reply_msg);
         Ok(msg_to_resp(reply_msg))

@@ -5,8 +5,7 @@ use std::env;
 
 use rand::Rng;
 
-use wasp_sdk::bytes::Bytes;
-use wasp_sdk::message::Message;
+use wasp_sdk::*;
 
 #[wasp_sdk::handler]
 fn handler(mut msg: Message) -> Message {

@@ -1,4 +1,4 @@
-use crate::message::Message;
+use crate::*;
 
 // #[cfg(target_arch = "wasm32")]
 extern "C" {
@@ -16,7 +16,7 @@ pub fn run_handler<F>(thread_id: i32, ctx_id: i32, size: i32, handler: F)
 {
     let call_msg = recv_msg(thread_id, ctx_id, size);
     let reply_msg = handler(call_msg);
-    let b = serde_json::to_vec(&reply_msg).unwrap();
+    let b = &reply_msg.write_to_bytes().unwrap();
     unsafe { _wasp_host_reply_msg(thread_id, ctx_id, b.as_ptr() as i32, b.len() as i32) };
 }
 
@@ -26,7 +26,7 @@ pub fn recv_msg(thread_id: i32, ctx_id: i32, size: i32) -> Message {
     }
     let buffer = vec![0u8; size as usize];
     unsafe { _wasp_host_recall_msg(thread_id, ctx_id, buffer.as_ptr() as i32) };
-    serde_json::from_slice(buffer.as_slice())
+    Message::parse_from_bytes(buffer.as_slice())
         // .unwrap()
         .unwrap_or_else(|e| {
             eprintln!("recv_msg serde_json error: {}", e);
@@ -35,6 +35,6 @@ pub fn recv_msg(thread_id: i32, ctx_id: i32, size: i32) -> Message {
 }
 
 pub fn send_msg(thread_id: i32, ctx_id: i32, msg: Message) -> Message {
-    let b = serde_json::to_vec(&msg).unwrap();
+    let b = &msg.write_to_bytes().unwrap();
     recv_msg(thread_id, ctx_id, unsafe { _wasp_host_send_msg(thread_id, ctx_id, b.as_ptr() as i32, b.len() as i32) })
 }
