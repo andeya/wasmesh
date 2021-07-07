@@ -14,10 +14,11 @@ pub(crate) struct Instance {
     instance: Option<wasmer::Instance>,
     wasi_env: Option<WasiEnv>,
     message_cache: Option<RefCell<HashMap<i32, Vec<u8>>>>,
+    ctx_id_count: RefCell<i32>,
 }
 
 pub(crate) const INSTANCES_COUNT: usize = 16;
-const INSTANCE_NONE: Instance = Instance { instance: None, wasi_env: None, message_cache: None };
+const INSTANCE_NONE: Instance = Instance { instance: None, wasi_env: None, message_cache: None, ctx_id_count: RefCell::new(0) };
 static mut INSTANCES: [Instance; INSTANCES_COUNT] = [INSTANCE_NONE; INSTANCES_COUNT];
 
 pub(crate) fn instance_ref(thread_id: usize) -> &'static Instance {
@@ -28,14 +29,18 @@ pub(crate) async fn rebuild(serve_options: &ServeOpt) -> Result<(), Box<dyn std:
     let (modulename, wasm_bytes) = Instance::read_wasm_bytes(serve_options)?;
     unsafe {
         let mut hdls = vec![];
-        INSTANCES[0] = Instance::new(serve_options, &format!("{}-{}", &modulename, 0), &wasm_bytes)?;
-        for i in 1..INSTANCES_COUNT {
+        for i in 0..INSTANCES_COUNT {
             let _serve_options = serve_options.clone().to_owned();
             let _modulename = format!("{}-{}", &modulename, i);
             let _wasm_bytes = wasm_bytes.clone();
             let hdl = tokio::task::spawn_blocking(move || {
                 println!("========={:?}=========", std::thread::current().id());
-                INSTANCES[i] = Instance::new(&_serve_options, &_modulename, &_wasm_bytes).unwrap();
+                INSTANCES[i] = Instance::new(&_serve_options, &_modulename, &_wasm_bytes)
+                    .or_else(|e| {
+                        eprintln!("{}", e);
+                        Err(e)
+                    })
+                    .unwrap();
             });
             hdls.push(hdl);
         }
@@ -92,6 +97,7 @@ impl Instance {
             instance: Some(instance),
             wasi_env: Some(wasi_env),
             message_cache: Some(RefCell::new(HashMap::with_capacity(1024))),
+            ctx_id_count: RefCell::new(0),
         }.init())
     }
     fn register_import_object(import_object: &mut ImportObject, store: &Store) {
@@ -174,13 +180,14 @@ impl Instance {
             .map(|c| c.get())
             .collect()
     }
-
+    pub(crate) fn gen_ctx_id(&self) -> i32 {
+        self.ctx_id_count.replace_with(|v| *v + 1)
+    }
     pub(crate) fn set_guest_request(&self, ctx_id: i32, data: Vec<u8>) -> i32 {
         let size = data.len() as i32;
         self.cache_msg_data(ctx_id, data);
         size
     }
-
     pub(crate) fn get_guest_response(&self, ctx_id: i32) -> Vec<u8> {
         self.take_msg_data(ctx_id).unwrap_or(vec![])
     }

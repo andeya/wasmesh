@@ -1,6 +1,5 @@
 use std::ffi::OsString;
 use std::net::{AddrParseError, SocketAddr, SocketAddrV4, SocketAddrV6};
-use std::sync::atomic::{AtomicI32, Ordering};
 
 use hyper::{Body, Error, Request, Response};
 use hyper::server::conn::AddrStream;
@@ -92,14 +91,15 @@ impl Server {
 
     async fn handle(&self, req: Request<Body>) -> Result<Response<Body>, String> {
         // return Ok(Response::default());
+        let call_msg = req_to_call_msg(req).await;
+
         let thread_id = current_thread_id() % INSTANCES_COUNT;
-        let ctx_id = new_ctx_id();
+        let ins = instance_ref(thread_id);
+        let ctx_id = ins.gen_ctx_id();
 
         // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
 
-        let call_msg = req_to_call_msg(req).await;
         let data = serde_json::to_vec(&call_msg).or_else(|e| Err(format!("{}", e)))?;
-        let ins = instance_ref(thread_id);
         ins.call_guest_handler(thread_id as i32, ctx_id, ins.set_guest_request(ctx_id, data));
         let reply_msg: Message = serde_json::from_slice(
             ins
@@ -108,14 +108,6 @@ impl Server {
         ).unwrap();
         // println!("========= reply_msg={:?}", reply_msg);
         Ok(msg_to_resp(reply_msg))
-    }
-}
-
-static mut CTX_ID_COUNT: AtomicI32 = AtomicI32::new(0);
-
-fn new_ctx_id() -> i32 {
-    unsafe {
-        CTX_ID_COUNT.fetch_add(1, Ordering::Relaxed)
     }
 }
 
