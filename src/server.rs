@@ -14,6 +14,9 @@ use crate::instance::{self, local_instance_ref};
 pub struct ServeOpt {
     pub(crate) addr: String,
     pub(crate) command: String,
+    /// worker threads, default to lazy auto-detection (one thread per CPU core)
+    #[structopt(long, default_value = "0")]
+    pub(crate) threads: usize,
     /// WASI pre-opened directory
     #[structopt(long = "dir", multiple = true, group = "wasi")]
     pub(crate) pre_opened_directories: Vec<String>,
@@ -44,14 +47,31 @@ impl ServeOpt {
     pub(crate) fn to_args_unchecked(&self) -> impl IntoIterator<Item=&str> {
         self.args.iter().map(|v| v.to_str().unwrap()).collect::<Vec<&str>>()
     }
+    pub(crate) fn get_worker_threads(&self) -> usize {
+        if self.threads > 0 {
+            return self.threads
+        }
+        let threads = num_cpus::get();
+        if threads > 0 {
+            return threads
+        }
+        return 1
+    }
 }
 
 static mut SERVER: Server = Server::new();
 
-pub(crate) async fn serve(serve_options: ServeOpt) -> Result<(), anyhow::Error> {
-    Server::serve(serve_options)
-        .await
-        .map_err(|e| anyhow::Error::msg(format!("{}", e)))
+pub(crate) fn serve(serve_options: ServeOpt) -> Result<(), anyhow::Error> {
+    let mut builder = tokio::runtime::Builder::new_multi_thread();
+    builder.worker_threads(serve_options.get_worker_threads());
+    builder.enable_all()
+           .build()
+           .unwrap()
+           .block_on(async {
+               Server::serve(serve_options)
+                   .await
+                   .map_err(|e| anyhow::Error::msg(format!("{}", e)))
+           })
 }
 
 pub(crate) struct Server {}

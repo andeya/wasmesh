@@ -19,37 +19,38 @@ pub(crate) struct Instance {
     ctx_id_count: RefCell<i32>,
 }
 
-pub(crate) const INSTANCES_COUNT: usize = 16;
-const INSTANCE_NONE: Instance = Instance { instance: None, message_cache: None, ctx_id_count: RefCell::new(0) };
-static mut INSTANCES: [Instance; INSTANCES_COUNT] = [INSTANCE_NONE; INSTANCES_COUNT];
+static mut INSTANCES: Vec<Instance> = Vec::new();
 
 fn instance_ref(index: usize) -> &'static Instance {
-    return unsafe { &INSTANCES[index] }
+    let real_index = index % unsafe { INSTANCES.len() };
+    #[cfg(debug_assertions)]
+    println!("index: {}%{}={}", index, unsafe { INSTANCES.len() }, real_index);
+    return unsafe { &INSTANCES[real_index] }
 }
 
 pub(crate) fn local_instance_ref() -> (usize, &'static Instance) {
     let thread_id = current_thread_id();
-    (thread_id, instance_ref(thread_id % INSTANCES_COUNT))
+    (thread_id, instance_ref(thread_id))
 }
 
 pub(crate) async fn rebuild(serve_options: &ServeOpt) -> Result<(), Box<dyn std::error::Error>> {
     unsafe {
         let (wasi_env, module, store) = Instance::compile(serve_options)?;
         let mut hdls = vec![];
-        for i in 0..INSTANCES_COUNT {
+        for _ in 0..serve_options.get_worker_threads() {
             let (_wasi_env, _module, _store) = (wasi_env.clone(), module.clone(), store.clone());
             let hdl = tokio::task::spawn_blocking(move || {
-                INSTANCES[i] = Instance::new(_wasi_env, _module, _store)
+                Instance::new(_wasi_env, _module, _store)
                     .or_else(|e| {
                         eprintln!("{}", e);
                         Err(e)
                     })
-                    .unwrap();
+                    .unwrap()
             });
             hdls.push(hdl);
         }
         for hdl in hdls {
-            hdl.await?;
+            INSTANCES.push(hdl.await?);
         }
     }
     Ok(())

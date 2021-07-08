@@ -102,9 +102,7 @@ enum Command {
     Serve(ServeOpt),
 }
 
-// #[tokio::main(flavor = "multi_thread", worker_threads = 16)]
-#[tokio::main]
-async fn main() {
+fn main() {
     pretty_env_logger::init();
 
     #[cfg(feature = "telemetry")]
@@ -168,7 +166,7 @@ async fn main() {
         Command::Remove(remove_options) => commands::remove(remove_options),
         Command::Publish(publish_options) => commands::publish(publish_options),
         Command::Run(run_options) => commands::run(run_options),
-        Command::Serve(serve_options) => serve(serve_options).await,
+        Command::Serve(serve_options) => serve(serve_options),
         Command::Execute(execute_options) => commands::execute(execute_options),
         Command::Search(search_options) => commands::search(search_options),
         #[cfg(feature = "package")]
