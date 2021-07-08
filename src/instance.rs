@@ -14,8 +14,8 @@ use crate::server::ServeOpt;
 
 #[derive(Clone, Debug)]
 pub(crate) struct Instance {
-    instance: Option<wasmer::Instance>,
-    message_cache: Option<RefCell<HashMap<i32, Vec<u8>>>>,
+    instance: wasmer::Instance,
+    message_cache: RefCell<HashMap<i32, Vec<u8>>>,
     ctx_id_count: RefCell<i32>,
 }
 
@@ -109,8 +109,8 @@ impl Instance {
         println!("[{:?}] Created instance: {:?}", thread_id, module.name().unwrap());
 
         Ok(Instance {
-            instance: Some(instance),
-            message_cache: Some(RefCell::new(HashMap::with_capacity(1024))),
+            instance,
+            message_cache: RefCell::new(HashMap::with_capacity(1024)),
             ctx_id_count: RefCell::new(0),
         }.init())
     }
@@ -139,19 +139,16 @@ impl Instance {
     fn init(self) -> Self {
         self
     }
-    fn get_instance(&self) -> &wasmer::Instance {
-        self.instance.as_ref().unwrap()
-    }
     fn take_msg_data(&self, ctx_id: i32) -> Option<Vec<u8>> {
-        self.message_cache.as_ref().unwrap().borrow_mut().remove(&ctx_id)
+        self.message_cache.borrow_mut().remove(&ctx_id)
     }
     fn cache_msg_data(&self, ctx_id: i32, data: Vec<u8>) {
-        self.message_cache.as_ref().unwrap().borrow_mut().insert(ctx_id, data);
+        self.message_cache.borrow_mut().insert(ctx_id, data);
     }
     pub(crate) fn call_guest_handler(&self, thread_id: i32, ctx_id: i32, size: i32) {
         loop {
             if let Err(e) = self
-                .get_instance()
+                .instance
                 .exports
                 .get_native_function::<(i32, i32, i32), ()>("_wasp_guest_handler")
                 .unwrap()
@@ -175,7 +172,7 @@ impl Instance {
         }
     }
     fn get_memory(&self) -> &Memory {
-        self.get_instance().exports.get_memory("memory").unwrap()
+        self.instance.exports.get_memory("memory").unwrap()
     }
     fn get_view(&self) -> MemoryView<u8> {
         self.get_memory().view::<u8>()
