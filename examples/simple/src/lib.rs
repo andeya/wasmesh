@@ -11,9 +11,10 @@ use wasp_sdk::*;
 fn handler(mut msg: Message) -> Message {
     // eprintln!("Args: {:?}", env::args().collect::<Vec<String>>());
     // eprintln!("[WASI-Simple] CallMessage: {:?}", msg);
-    // let mut rng = rand::thread_rng();
-    // let y: u8 = rng.gen();
+
     let y: u8 = 10;
+    // let y: u8 = rand::thread_rng().gen();
+
     let body = format!("this is ReplyMessage {}", "=".repeat(y as usize));
     msg.set_body(Bytes::from(body));
     // eprintln!("[WASI-Simple] ReplyMessage: {:?}", msg);

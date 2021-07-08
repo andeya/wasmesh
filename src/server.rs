@@ -8,7 +8,7 @@ use structopt::StructOpt;
 
 use wasp_sdk::*;
 
-use crate::instance::{self, instance_ref, INSTANCES_COUNT};
+use crate::instance::{self, local_instance_ref};
 
 #[derive(StructOpt, Debug, Clone)]
 pub struct ServeOpt {
@@ -93,8 +93,7 @@ impl Server {
         // return Ok(Response::default());
         let call_msg = req_to_call_msg(req).await;
 
-        let thread_id = current_thread_id() % INSTANCES_COUNT;
-        let ins = instance_ref(thread_id);
+        let (thread_id, ins) = local_instance_ref();
         let ctx_id = ins.gen_ctx_id();
 
         // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
@@ -106,15 +105,6 @@ impl Server {
         // println!("========= reply_msg={:?}", reply_msg);
         Ok(msg_to_resp(reply_msg))
     }
-}
-
-fn current_thread_id() -> usize {
-    let thread_id: usize = format!("{:?}", ::std::thread::current().id())
-        .matches(char::is_numeric)
-        .collect::<Vec<&str>>()
-        .join("")
-        .parse().unwrap();
-    return thread_id;
 }
 
 fn msg_to_resp(msg: Message) -> Response<Body> {

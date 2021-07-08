@@ -15,30 +15,31 @@ use crate::server::ServeOpt;
 #[derive(Clone, Debug)]
 pub(crate) struct Instance {
     instance: Option<wasmer::Instance>,
-    wasi_env: Option<WasiEnv>,
     message_cache: Option<RefCell<HashMap<i32, Vec<u8>>>>,
     ctx_id_count: RefCell<i32>,
 }
 
 pub(crate) const INSTANCES_COUNT: usize = 16;
-const INSTANCE_NONE: Instance = Instance { instance: None, wasi_env: None, message_cache: None, ctx_id_count: RefCell::new(0) };
+const INSTANCE_NONE: Instance = Instance { instance: None, message_cache: None, ctx_id_count: RefCell::new(0) };
 static mut INSTANCES: [Instance; INSTANCES_COUNT] = [INSTANCE_NONE; INSTANCES_COUNT];
 
-pub(crate) fn instance_ref(thread_id: usize) -> &'static Instance {
-    return unsafe { &INSTANCES[thread_id] }
+fn instance_ref(index: usize) -> &'static Instance {
+    return unsafe { &INSTANCES[index] }
+}
+
+pub(crate) fn local_instance_ref() -> (usize, &'static Instance) {
+    let thread_id = current_thread_id();
+    (thread_id, instance_ref(thread_id % INSTANCES_COUNT))
 }
 
 pub(crate) async fn rebuild(serve_options: &ServeOpt) -> Result<(), Box<dyn std::error::Error>> {
-    let (modulename, wasm_bytes) = Instance::read_wasm_bytes(serve_options)?;
     unsafe {
+        let (wasi_env, module, store) = Instance::compile(serve_options)?;
         let mut hdls = vec![];
         for i in 0..INSTANCES_COUNT {
-            let _serve_options = serve_options.clone().to_owned();
-            let _modulename = format!("{}-{}", &modulename, i);
-            let _wasm_bytes = wasm_bytes.clone();
+            let (_wasi_env, _module, _store) = (wasi_env.clone(), module.clone(), store.clone());
             let hdl = tokio::task::spawn_blocking(move || {
-                println!("========={:?}=========", std::thread::current().id());
-                INSTANCES[i] = Instance::new(&_serve_options, &_modulename, &_wasm_bytes)
+                INSTANCES[i] = Instance::new(_wasi_env, _module, _store)
                     .or_else(|e| {
                         eprintln!("{}", e);
                         Err(e)
@@ -55,14 +56,12 @@ pub(crate) async fn rebuild(serve_options: &ServeOpt) -> Result<(), Box<dyn std:
 }
 
 impl Instance {
-    fn read_wasm_bytes(serve_options: &ServeOpt) -> Result<(String, Vec<u8>), Box<dyn std::error::Error>> {
+    fn compile(serve_options: &ServeOpt) -> Result<(WasiEnv, Module, Store), Box<dyn std::error::Error>> {
         let file_ref: &Path = serve_options.get_wasm_path().as_ref();
         let canonical = file_ref.canonicalize()?;
         let wasm_bytes = std::fs::read(file_ref)?;
         let filename = canonical.as_path().to_str().unwrap();
-        Ok((filename.to_string(), wasm_bytes))
-    }
-    fn new(serve_options: &ServeOpt, modulename: &String, wasm_bytes: &Vec<u8>) -> Result<Instance, Box<dyn std::error::Error>> {
+
         // Create a Store.
         // Note that we don't need to specify the engine/compiler if we want to use
         // the default provided by Wasmer.
@@ -76,24 +75,29 @@ impl Instance {
             store = Store::new(&Universal::new(LLVM::default()).engine());
         }
 
-        println!("Compiling module...");
+        println!("Compiling module {}...", filename);
 
         let mut module = Module::new(&store, wasm_bytes)?;
-        module.set_name(modulename);
+        module.set_name(filename);
 
         println!("Module exports functions: {:?}", module.exports().functions().collect::<Vec<wasmer::ExportType<FunctionType>>>());
 
         // First, we create the `WasiEnv` with the stdio pipes
         // let input = Pipe::new();
         // let output = Pipe::new();
-        let mut wasi_env = WasiState::new(serve_options.get_name())
+        let wasi_env = WasiState::new(serve_options.get_name())
             .preopen_dirs(serve_options.get_preopen_dirs())?
             .args(serve_options.to_args_unchecked())
             // .stdin(Box::new(input))
             // .stdout(Box::new(output))
             .finalize()?;
+        Ok((wasi_env, module, store))
+    }
+    fn new(mut wasi_env: WasiEnv, module: Module, store: Store) -> Result<Instance, Box<dyn std::error::Error>> {
+        let thread_id = ::std::thread::current().id();
 
-        println!("Instantiating module with WASI imports...");
+        println!("[{:?}] Instantiating module with WASI imports...", thread_id);
+
         // Then, we get the import object related to our WASI
         // and attach it to the Wasm instance.
         let mut import_object = wasi_env.import_object(&module)?;
@@ -101,11 +105,10 @@ impl Instance {
 
         let instance = wasmer::Instance::new(&module, &import_object)?;
 
-        println!("Created instance: {}", serve_options.command);
+        println!("[{:?}] Created instance: {:?}", thread_id, module.name().unwrap());
 
         Ok(Instance {
             instance: Some(instance),
-            wasi_env: Some(wasi_env),
             message_cache: Some(RefCell::new(HashMap::with_capacity(1024))),
             ctx_id_count: RefCell::new(0),
         }.init())
@@ -201,4 +204,13 @@ impl Instance {
     pub(crate) fn get_guest_response(&self, ctx_id: i32) -> Vec<u8> {
         self.take_msg_data(ctx_id).unwrap_or(vec![])
     }
+}
+
+fn current_thread_id() -> usize {
+    let thread_id: usize = format!("{:?}", ::std::thread::current().id())
+        .matches(char::is_numeric)
+        .collect::<Vec<&str>>()
+        .join("")
+        .parse().unwrap();
+    return thread_id;
 }
