@@ -1,4 +1,4 @@
 [alias]
-run-simple = "run -- serve 127.0.0.1:9090 examples/simple/target/wasm32-wasi/debug/simple.wasm --threads=16 -- -k=v x"
-run-simple-release = "run --release -- serve 127.0.0.1:9090 examples/simple/target/wasm32-wasi/release/simple.wasm -- -k=v x"
-run-simple-release-llvm = "run --release --features=llvm -- serve 127.0.0.1:9090 examples/simple/target/wasm32-wasi/release/simple.wasm -- -k=v x"
+run-simple = "run -- serve --threads=16 127.0.0.1:9090 rust/examples/simple/target/wasm32-wasi/debug/simple.wasm -- -k=v x"
+run-simple-release = "run --release -- serve --threads=16 127.0.0.1:9090 rust/examples/simple/target/wasm32-wasi/release/simple.wasm -- -k=v x"
+run-simple-release-llvm = "run --release --features=llvm -- serve --threads=16 127.0.0.1:9090 rust/examples/simple/target/wasm32-wasi/release/simple.wasm -- -k=v x"

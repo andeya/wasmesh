@@ -3,11 +3,12 @@ name = "simple"
 version = "0.1.0"
 edition = "2018"
 resolver = "2"
+authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 crate-type = ['cdylib']
 
 [dependencies]
-wasp-sdk = { path = "../../wasp-sdk" }
+wasp = { path = "../.." }
 rand = "0.8.4"

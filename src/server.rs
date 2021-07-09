@@ -6,7 +6,7 @@ use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use structopt::StructOpt;
 
-use wasp_sdk::*;
+use wasp::*;
 
 use crate::instance::{self, local_instance_ref};
 
