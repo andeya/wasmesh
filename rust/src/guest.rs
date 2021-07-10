@@ -16,26 +16,40 @@ pub fn handle_request<F>(thread_id: i32, ctx_id: i32, size: i32, handler: F)
     where
         F: Fn(Request) -> Option<Response>,
 {
-    let req = recv_request(thread_id, ctx_id, size);
+    let mut buffer = vec![0u8; size as usize];
+    let req = {
+        if size == 0 {
+            Request::default()
+        } else {
+            unsafe { _wasp_recall_request(thread_id, ctx_id, buffer.as_ptr() as i32) };
+            Request::parse_from_bytes(buffer.as_slice())
+                .unwrap_or_else(|e| {
+                    eprintln!("receive request parse_from_bytes error: {}", e);
+                    Request::default()
+                })
+        }
+    };
+    // let req = recv_request(thread_id, ctx_id, size);
     let resp = handler(req);
     if let Some(resp) = resp {
-        let b = &resp.write_to_bytes().unwrap();
-        unsafe { _wasp_send_response(thread_id, ctx_id, b.as_ptr() as i32, b.len() as i32) };
+        buffer.truncate(0);
+        resp.write_to_vec(&mut buffer).unwrap();
+        unsafe { _wasp_send_response(thread_id, ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
     }
 }
 
-fn recv_request(thread_id: i32, ctx_id: i32, size: i32) -> Request {
-    if size == 0 {
-        return Request::default();
-    }
-    let buffer = vec![0u8; size as usize];
-    unsafe { _wasp_recall_request(thread_id, ctx_id, buffer.as_ptr() as i32) };
-    Request::parse_from_bytes(buffer.as_slice())
-        .unwrap_or_else(|e| {
-            eprintln!("receive request parse_from_bytes error: {}", e);
-            Request::default()
-        })
-}
+// fn recv_request(thread_id: i32, ctx_id: i32, size: i32) -> Request {
+//     if size == 0 {
+//         return Request::default();
+//     }
+//     let buffer = vec![0u8; size as usize];
+//     unsafe { _wasp_recall_request(thread_id, ctx_id, buffer.as_ptr() as i32) };
+//     Request::parse_from_bytes(buffer.as_slice())
+//         .unwrap_or_else(|e| {
+//             eprintln!("receive request parse_from_bytes error: {}", e);
+//             Request::default()
+//         })
+// }
 
 pub fn do_request(thread_id: i32, ctx_id: i32, req: Request) -> Option<Response> {
     let mut buffer = req.write_to_bytes().unwrap();
