@@ -48,7 +48,7 @@ pub fn do_request<'a, F, F2>(thread_id: i32, ctx_id: i32, req_setter: F, resp_ha
     write_message(&mut buffer, &builder).unwrap();
     let size = unsafe { _wasp_send_request(thread_id, ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
     let req: request::Reader = builder.get_root_as_reader().unwrap();
-    if req.get_oneway() {
+    if size <= 0 || req.get_oneway() {
         return;
     }
     buffer.resize(size as usize, 0);
