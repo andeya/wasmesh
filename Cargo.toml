@@ -38,10 +38,6 @@ llvm = ["wasmer-compiler-llvm"]
 #[dev-dependencies]
 #wasp = { path = "rust" }
 
-[workspace]
-members = ["rust", "rust/wasp-macros"]
-exclude = ["rust/examples"]
-
 [[bin]]
 name = "wasp"
 path = "./src/main.rs"

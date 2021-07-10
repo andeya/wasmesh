@@ -7,7 +7,7 @@ use rand::Rng;
 
 use wasp::*;
 
-#[wasp_sdk::handler]
+#[wasp::handler]
 fn handler(mut msg: Message) -> Message {
     // eprintln!("Args: {:?}", env::args().collect::<Vec<String>>());
     // eprintln!("[WASI-Simple] CallMessage: {:?}", msg);

@@ -21,3 +21,7 @@ bytes = { version = "1", features = ["serde"] }
 [features]
 default = ["with-serde"]
 with-serde = []
+
+[workspace]
+members = ["wasp-macros"]
+exclude = ["examples"]
