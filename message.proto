@@ -4,10 +4,10 @@
 syntax = "proto3";
 
 message Request {
-    // Does the request require no response.
-    bool oneway = 1;
     // Ordered sequence number identifying the message.
-    int32 seqid = 2;
+    int32 seqid = 1;
+    // Does the request require no response.
+    bool oneway = 2;
     // Service call the message is associated with.
     string uri = 3;
     // Message headers.

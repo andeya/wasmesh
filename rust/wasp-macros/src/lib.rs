@@ -14,8 +14,8 @@ pub fn handler(_args: TokenStream, item: TokenStream) -> TokenStream {
     let handler_ident = input.sig.ident;
     let expanded = quote! {
         #[no_mangle]
-        pub extern "C" fn _wasp_guest_handler(thread_id: i32, ctx_id: i32, size: i32) {
-            wasp::guest::handle_request(thread_id, ctx_id, size, #handler_ident)
+        pub extern "C" fn _wasp_guest_handler(ctx_id: i64, size: i32) {
+            wasp::guest::handle_request(ctx_id, size, #handler_ident)
         }
     };
     handler_block.extend(TokenStream::from(expanded));

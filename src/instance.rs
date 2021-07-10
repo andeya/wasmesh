@@ -15,7 +15,7 @@ use crate::server::ServeOpt;
 #[derive(Clone, Debug)]
 pub(crate) struct Instance {
     instance: wasmer::Instance,
-    message_cache: RefCell<HashMap<i32, Vec<u8>>>,
+    message_cache: RefCell<HashMap<i64, Vec<u8>>>,
     ctx_id_count: RefCell<i32>,
 }
 
@@ -23,8 +23,8 @@ static mut INSTANCES: Vec<Instance> = Vec::new();
 
 fn instance_ref(index: usize) -> &'static Instance {
     let real_index = index % unsafe { INSTANCES.len() };
-    #[cfg(debug_assertions)]
-    println!("index: {}%{}={}", index, unsafe { INSTANCES.len() }, real_index);
+        #[cfg(debug_assertions)]
+        println!("index: {}%{}={}", index, unsafe { INSTANCES.len() }, real_index);
     return unsafe { &INSTANCES[real_index] }
 }
 
@@ -116,15 +116,17 @@ impl Instance {
     }
     fn register_import_object(import_object: &mut ImportObject, store: &Store) {
         import_object.register("env", import_namespace!({
-            "_wasp_recall_request" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32| {
+            "_wasp_recall_request" => Function::new_native(store, |ctx_id: i64, offset: i32| {
+                let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
                 // println!("_wasp_recall_request: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
-                let ins = instance_ref(thread_id as usize);
+                let ins = instance_ref(thread_id);
                 let _ = ins.use_mut_buffer(ctx_id, 0, |data|{
                     ins.set_view_bytes(offset as usize, data.iter());
                     data.len()
                 });
             }),
-            "_wasp_send_response" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32| {
+            "_wasp_send_response" => Function::new_native(store, |ctx_id: i64, offset: i32, size: i32| {
+                let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
                 // println!("_wasp_send_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
                 let ins = instance_ref(thread_id as usize);
                 let _ = ins.use_mut_buffer(ctx_id, size as usize, |buffer|{
@@ -132,12 +134,14 @@ impl Instance {
                     buffer.len()
                 });
             }),
-            "_wasp_send_request" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32|-> i32 {
+            "_wasp_send_request" => Function::new_native(store, |ctx_id: i64, offset: i32, size: i32|-> i32 {
+                let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
                 println!("_wasp_send_request: thread_id:{}, ctx_id:{}, offset:{}, size:{}", thread_id, ctx_id, offset, size);
                 // TODO
                 0
             }),
-            "_wasp_recall_response" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32| {
+            "_wasp_recall_response" => Function::new_native(store, |ctx_id: i64, offset: i32| {
+                let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
                 println!("_wasp_recall_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
                 // TODO
             }),
@@ -146,10 +150,10 @@ impl Instance {
     fn init(self) -> Self {
         self
     }
-    // fn cache_message_data(&self, ctx_id: i32, data: Vec<u8>) {
+    // fn cache_message_data(&self, ctx_id: i64, data: Vec<u8>) {
     //     self.message_cache.borrow_mut().insert(ctx_id, data);
     // }
-    pub(crate) fn use_mut_buffer<F: FnOnce(&mut Vec<u8>) -> usize>(&self, ctx_id: i32, size: usize, call: F) -> usize {
+    pub(crate) fn use_mut_buffer<F: FnOnce(&mut Vec<u8>) -> usize>(&self, ctx_id: i64, size: usize, call: F) -> usize {
         let mut cache = self.message_cache.borrow_mut();
         if let Some(buffer) = cache.get_mut(&ctx_id) {
             return call(buffer);
@@ -157,17 +161,17 @@ impl Instance {
         cache.insert(ctx_id, Vec::with_capacity(size));
         call(cache.get_mut(&ctx_id).unwrap())
     }
-    pub(crate) fn take_buffer(&self, ctx_id: i32) -> Option<Vec<u8>> {
+    pub(crate) fn take_buffer(&self, ctx_id: i64) -> Option<Vec<u8>> {
         self.message_cache.borrow_mut().remove(&ctx_id)
     }
-    pub(crate) fn call_guest_handler(&self, thread_id: i32, ctx_id: i32, size: i32) {
+    pub(crate) fn call_guest_handler(&self, ctx_id: i64, size: i32) {
         loop {
             if let Err(e) = self
                 .instance
                 .exports
-                .get_native_function::<(i32, i32, i32), ()>("_wasp_guest_handler")
+                .get_native_function::<(i64, i32), ()>("_wasp_guest_handler")
                 .unwrap()
-                .call(thread_id, ctx_id, size)
+                .call(ctx_id, size)
             {
                 let estr = format!("{:?}", e);
                 eprintln!("call _wasp_guest_handler error: {}", estr);
@@ -211,16 +215,39 @@ impl Instance {
             buffer[x.0] = x.1;
         }
     }
-    pub(crate) fn gen_ctx_id(&self) -> i32 {
-        self.ctx_id_count.replace_with(|v| *v + 1)
+    pub(crate) fn gen_ctx_id(&self, thread_id: usize) -> i64 {
+        (thread_id as i64) << 32 |
+            (self.ctx_id_count.replace_with(|v| *v + 1) as i64)
     }
-    pub(crate) fn try_reuse_buffer(&self, buffer: Vec<u8>) {
-        let next_id = self.ctx_id_count.borrow_mut().clone() + 1;
+    fn next_ctx_id(&self, thread_id: usize) -> i64 {
+        (thread_id as i64) << 32 |
+            ((self.ctx_id_count.borrow_mut().clone() + 1) as i64)
+    }
+    #[inline]
+    fn get_thread_id_from_ctx_id(ctx_id: i64) -> usize {
+        (ctx_id >> 32) as usize
+    }
+    // fn split_ctx_id(ctx_id: i64) -> (usize, i32) {
+    //     ((ctx_id >> 32) as usize, (ctx_id << 32 >> 32) as i32)
+    // }
+    pub(crate) fn try_reuse_buffer(&self, thread_id: usize, buffer: Vec<u8>) {
+        let next_id = self.next_ctx_id(thread_id);
         let mut cache = self.message_cache.borrow_mut();
         if !cache.contains_key(&next_id) {
             cache.insert(next_id, buffer);
         }
     }
+}
+
+#[test]
+fn test_ctx_id() {
+    let thread_id = 12;
+    let buf_idx = 110;
+    let ctx_id = (thread_id as i64) << 32 | (buf_idx as i64);
+    println!("{}", ctx_id);
+    let x = ((ctx_id >> 32) as usize, (ctx_id << 32 >> 32) as i32);
+    assert_eq!(x.0, thread_id);
+    assert_eq!(x.1, buf_idx);
 }
 
 fn current_thread_id() -> usize {

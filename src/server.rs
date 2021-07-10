@@ -113,8 +113,9 @@ impl Server {
         let req = to_request(req).await;
 
         let (thread_id, ins) = local_instance_ref();
-        let ctx_id = ins.gen_ctx_id();
-
+        let ctx_id = ins.gen_ctx_id(thread_id);
+        #[cfg(debug_assertions)]
+        println!("thread_id:{}, ctx_id:{}", thread_id, ctx_id);
         let buffer_len = ins.use_mut_buffer(ctx_id, req.compute_size() as usize, |buffer| {
             let size = req.compute_size() as usize;
             if size > buffer.capacity() {
@@ -127,13 +128,13 @@ impl Server {
             buffer.len()
         });
 
-        ins.call_guest_handler(thread_id as i32, ctx_id, buffer_len as i32);
+        ins.call_guest_handler(ctx_id, buffer_len as i32);
         // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
 
         let buffer = ins.take_buffer(ctx_id).unwrap_or(vec![]);
         let resp = Response::parse_from_bytes(buffer.as_slice()).unwrap();
 
-        ins.try_reuse_buffer(buffer);
+        ins.try_reuse_buffer(thread_id, buffer);
         // println!("========= resp={:?}", resp);
         Ok(to_http_response(resp))
     }

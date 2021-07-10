@@ -27,8 +27,8 @@
 #[cfg_attr(feature = "with-serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Request {
     // message fields
-    pub oneway: bool,
     pub seqid: i32,
+    pub oneway: bool,
     pub uri: ::std::string::String,
     pub headers: ::std::collections::HashMap<::std::string::String, ::std::string::String>,
     pub body: ::bytes::Bytes,
@@ -50,22 +50,7 @@ impl Request {
         ::std::default::Default::default()
     }
 
-    // bool oneway = 1;
-
-
-    pub fn get_oneway(&self) -> bool {
-        self.oneway
-    }
-    pub fn clear_oneway(&mut self) {
-        self.oneway = false;
-    }
-
-    // Param is passed by value, moved
-    pub fn set_oneway(&mut self, v: bool) {
-        self.oneway = v;
-    }
-
-    // int32 seqid = 2;
+    // int32 seqid = 1;
 
 
     pub fn get_seqid(&self) -> i32 {
@@ -78,6 +63,21 @@ impl Request {
     // Param is passed by value, moved
     pub fn set_seqid(&mut self, v: i32) {
         self.seqid = v;
+    }
+
+    // bool oneway = 2;
+
+
+    pub fn get_oneway(&self) -> bool {
+        self.oneway
+    }
+    pub fn clear_oneway(&mut self) {
+        self.oneway = false;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_oneway(&mut self, v: bool) {
+        self.oneway = v;
     }
 
     // string uri = 3;
@@ -171,15 +171,15 @@ impl ::protobuf::Message for Request {
                     if wire_type != ::protobuf::wire_format::WireTypeVarint {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
-                    let tmp = is.read_bool()?;
-                    self.oneway = tmp;
+                    let tmp = is.read_int32()?;
+                    self.seqid = tmp;
                 },
                 2 => {
                     if wire_type != ::protobuf::wire_format::WireTypeVarint {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
-                    let tmp = is.read_int32()?;
-                    self.seqid = tmp;
+                    let tmp = is.read_bool()?;
+                    self.oneway = tmp;
                 },
                 3 => {
                     ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.uri)?;
@@ -202,11 +202,11 @@ impl ::protobuf::Message for Request {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
+        if self.seqid != 0 {
+            my_size += ::protobuf::rt::value_size(1, self.seqid, ::protobuf::wire_format::WireTypeVarint);
+        }
         if self.oneway != false {
             my_size += 2;
-        }
-        if self.seqid != 0 {
-            my_size += ::protobuf::rt::value_size(2, self.seqid, ::protobuf::wire_format::WireTypeVarint);
         }
         if !self.uri.is_empty() {
             my_size += ::protobuf::rt::string_size(3, &self.uri);
@@ -221,11 +221,11 @@ impl ::protobuf::Message for Request {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        if self.oneway != false {
-            os.write_bool(1, self.oneway)?;
-        }
         if self.seqid != 0 {
-            os.write_int32(2, self.seqid)?;
+            os.write_int32(1, self.seqid)?;
+        }
+        if self.oneway != false {
+            os.write_bool(2, self.oneway)?;
         }
         if !self.uri.is_empty() {
             os.write_string(3, &self.uri)?;
@@ -272,15 +272,15 @@ impl ::protobuf::Message for Request {
         static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::MessageDescriptor> = ::protobuf::rt::LazyV2::INIT;
         descriptor.get(|| {
             let mut fields = ::std::vec::Vec::new();
-            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBool>(
-                "oneway",
-                |m: &Request| { &m.oneway },
-                |m: &mut Request| { &mut m.oneway },
-            ));
             fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeInt32>(
                 "seqid",
                 |m: &Request| { &m.seqid },
                 |m: &mut Request| { &mut m.seqid },
+            ));
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBool>(
+                "oneway",
+                |m: &Request| { &m.oneway },
+                |m: &mut Request| { &mut m.oneway },
             ));
             fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
                 "uri",
@@ -313,8 +313,8 @@ impl ::protobuf::Message for Request {
 
 impl ::protobuf::Clear for Request {
     fn clear(&mut self) {
-        self.oneway = false;
         self.seqid = 0;
+        self.oneway = false;
         self.uri.clear();
         self.headers.clear();
         self.body.clear();
@@ -604,8 +604,8 @@ impl ::protobuf::reflect::ProtobufValue for Response {
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\rmessage.proto\"\xca\x01\n\x07Request\x12\x16\n\x06oneway\x18\x01\x20\
-    \x01(\x08R\x06oneway\x12\x14\n\x05seqid\x18\x02\x20\x01(\x05R\x05seqid\
+    \n\rmessage.proto\"\xca\x01\n\x07Request\x12\x14\n\x05seqid\x18\x01\x20\
+    \x01(\x05R\x05seqid\x12\x16\n\x06oneway\x18\x02\x20\x01(\x08R\x06oneway\
     \x12\x10\n\x03uri\x18\x03\x20\x01(\tR\x03uri\x12/\n\x07headers\x18\x04\
     \x20\x03(\x0b2\x15.Request.HeadersEntryR\x07headers\x12\x12\n\x04body\
     \x18\x05\x20\x01(\x0cR\x04body\x1a:\n\x0cHeadersEntry\x12\x10\n\x03key\
