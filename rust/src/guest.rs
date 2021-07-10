@@ -2,39 +2,72 @@ use crate::*;
 
 // #[cfg(target_arch = "wasm32")]
 extern "C" {
-    /// Recall the next message data to the offset position.
-    fn _wasp_host_recall_msg(thread_id: i32, ctx_id: i32, offset: i32);
-    /// Send reply msg;
-    fn _wasp_host_reply_msg(thread_id: i32, ctx_id: i32, offset: i32, size: i32);
-    /// Send call msg, return response msg size;
-    fn _wasp_host_send_msg(thread_id: i32, ctx_id: i32, offset: i32, size: i32) -> i32;
+    /// Recall the next request to the offset position.
+    fn _wasp_recall_request(thread_id: i32, ctx_id: i32, offset: i32);
+    /// Send response;
+    fn _wasp_send_response(thread_id: i32, ctx_id: i32, offset: i32, size: i32);
+    /// Send request, return response msg size;
+    fn _wasp_send_request(thread_id: i32, ctx_id: i32, offset: i32, size: i32) -> i32;
+    /// Recall the next response to the offset position.
+    fn _wasp_recall_response(thread_id: i32, ctx_id: i32, offset: i32);
 }
 
-pub fn run_handler<F>(thread_id: i32, ctx_id: i32, size: i32, handler: F)
+pub fn handle_request<F>(thread_id: i32, ctx_id: i32, size: i32, handler: F)
     where
-        F: Fn(Message) -> Message,
+        F: Fn(Request) -> Option<Response>,
 {
-    let call_msg = recv_msg(thread_id, ctx_id, size);
-    let reply_msg = handler(call_msg);
-    let b = &reply_msg.write_to_bytes().unwrap();
-    unsafe { _wasp_host_reply_msg(thread_id, ctx_id, b.as_ptr() as i32, b.len() as i32) };
-}
-
-pub fn recv_msg(thread_id: i32, ctx_id: i32, size: i32) -> Message {
-    if size == 0 {
-        return Message::default();
+    let mut buffer = vec![0u8; size as usize];
+    let req = {
+        if size == 0 {
+            Request::default()
+        } else {
+            unsafe { _wasp_recall_request(thread_id, ctx_id, buffer.as_ptr() as i32) };
+            Request::parse_from_bytes(buffer.as_slice())
+                .unwrap_or_else(|e| {
+                    eprintln!("receive request parse_from_bytes error: {}", e);
+                    Request::default()
+                })
+        }
+    };
+    // let req = recv_request(thread_id, ctx_id, size);
+    let resp = handler(req);
+    if let Some(resp) = resp {
+        let size = resp.compute_size() as usize;
+        if size > buffer.capacity() {
+            buffer.resize(size, 0);
+        }
+        unsafe { buffer.set_len(size) };
+        let mut os = CodedOutputStream::bytes(&mut buffer);
+        resp.write_to_with_cached_sizes(&mut os)
+            .or_else(|e| Err(format!("{}", e))).unwrap();
+        unsafe { _wasp_send_response(thread_id, ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
     }
-    let buffer = vec![0u8; size as usize];
-    unsafe { _wasp_host_recall_msg(thread_id, ctx_id, buffer.as_ptr() as i32) };
-    Message::parse_from_bytes(buffer.as_slice())
-        // .unwrap()
-        .unwrap_or_else(|e| {
-            eprintln!("recv_msg serde_json error: {}", e);
-            Message::default()
-        })
 }
 
-pub fn send_msg(thread_id: i32, ctx_id: i32, msg: Message) -> Message {
-    let b = &msg.write_to_bytes().unwrap();
-    recv_msg(thread_id, ctx_id, unsafe { _wasp_host_send_msg(thread_id, ctx_id, b.as_ptr() as i32, b.len() as i32) })
+// fn recv_request(thread_id: i32, ctx_id: i32, size: i32) -> Request {
+//     if size == 0 {
+//         return Request::default();
+//     }
+//     let buffer = vec![0u8; size as usize];
+//     unsafe { _wasp_recall_request(thread_id, ctx_id, buffer.as_ptr() as i32) };
+//     Request::parse_from_bytes(buffer.as_slice())
+//         .unwrap_or_else(|e| {
+//             eprintln!("receive request parse_from_bytes error: {}", e);
+//             Request::default()
+//         })
+// }
+
+pub fn do_request(thread_id: i32, ctx_id: i32, req: Request) -> Option<Response> {
+    let mut buffer = req.write_to_bytes().unwrap();
+    let size = unsafe { _wasp_send_request(thread_id, ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
+    if size <= 0 || req.get_oneway() {
+        return None
+    }
+    buffer.resize(size as usize, 0);
+    unsafe { _wasp_recall_response(thread_id, ctx_id, buffer.as_ptr() as i32) };
+    Some(Response::parse_from_bytes(buffer.as_slice())
+        .unwrap_or_else(|e| {
+            eprintln!("receive response parse_from_bytes error: {}", e);
+            Response::default()
+        }))
 }

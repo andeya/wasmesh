@@ -3,27 +3,26 @@
 
 syntax = "proto3";
 
-enum MessageType {
-    Unknown = 0x00;
-    /// Service-call request.
-    Call = 0x01;
-    /// Service-call response.
-    Reply = 0x02;
-    /// Unexpected error in the remote service.
-    Exception = 0x03;
-    /// One-way service-call request (no response is expected).
-    OneWay = 0x04;
+message Request {
+    // Does the request require no response.
+    bool oneway = 1;
+    // Ordered sequence number identifying the message.
+    int32 seqid = 2;
+    // Service call the message is associated with.
+    string uri = 3;
+    // Message headers.
+    map<string, string> headers = 4;
+    // Message body bytes.
+    bytes body = 5;
 }
 
-message Message {
-    /// Service call the message is associated with.
-    string uri = 1;
-    /// Message type.
-    MessageType mtype = 2;
-    /// Ordered sequence number identifying the message.
-    int32 seqid = 3;
-    /// Message headers.
-    map<string, string> headers = 4;
-    /// Message body bytes.
-    bytes body = 5;
+message Response {
+    // Ordered sequence number identifying the message.
+    int32 seqid = 1;
+    // The response's status
+    int32 status = 2;
+    // Message headers.
+    map<string, string> headers = 3;
+    // Message body bytes.
+    bytes body = 4;
 }

@@ -116,34 +116,49 @@ impl Instance {
     }
     fn register_import_object(import_object: &mut ImportObject, store: &Store) {
         import_object.register("env", import_namespace!({
-            "_wasp_host_recall_msg" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32| {
-                // println!("_wasp_host_recall_msg: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+            "_wasp_recall_request" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32| {
+                // println!("_wasp_recall_request: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
                 let ins = instance_ref(thread_id as usize);
-                ins.take_msg_data(ctx_id).map(|data|{
+                let _ = ins.use_mut_buffer(ctx_id, 0, |data|{
                     ins.set_view_bytes(offset as usize, data.iter());
+                    data.len()
                 });
             }),
-            "_wasp_host_reply_msg" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32| {
-                // println!("_wasp_host_reply_msg: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+            "_wasp_send_response" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32| {
+                // println!("_wasp_send_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
                 let ins = instance_ref(thread_id as usize);
-                let data = ins.get_view_bytes(offset as usize, size as usize);
-                ins.cache_msg_data(ctx_id, data);
+                let _ = ins.use_mut_buffer(ctx_id, size as usize, |buffer|{
+                    ins.read_view_bytes(offset as usize, size as usize, buffer);
+                    buffer.len()
+                });
             }),
-            "_wasp_host_send_msg" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32|-> i32 {
-                println!("_wasp_host_reply_msg: thread_id:{}, ctx_id:{}, offset:{}, size:{}", thread_id, ctx_id, offset, size);
+            "_wasp_send_request" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32|-> i32 {
+                println!("_wasp_send_request: thread_id:{}, ctx_id:{}, offset:{}, size:{}", thread_id, ctx_id, offset, size);
                 // TODO
                 0
+            }),
+            "_wasp_recall_response" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32| {
+                println!("_wasp_recall_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+                // TODO
             }),
         }));
     }
     fn init(self) -> Self {
         self
     }
-    fn take_msg_data(&self, ctx_id: i32) -> Option<Vec<u8>> {
-        self.message_cache.borrow_mut().remove(&ctx_id)
+    // fn cache_message_data(&self, ctx_id: i32, data: Vec<u8>) {
+    //     self.message_cache.borrow_mut().insert(ctx_id, data);
+    // }
+    pub(crate) fn use_mut_buffer<F: FnOnce(&mut Vec<u8>) -> usize>(&self, ctx_id: i32, size: usize, call: F) -> usize {
+        let mut cache = self.message_cache.borrow_mut();
+        if let Some(buffer) = cache.get_mut(&ctx_id) {
+            return call(buffer);
+        }
+        cache.insert(ctx_id, Vec::with_capacity(size));
+        call(cache.get_mut(&ctx_id).unwrap())
     }
-    fn cache_msg_data(&self, ctx_id: i32, data: Vec<u8>) {
-        self.message_cache.borrow_mut().insert(ctx_id, data);
+    pub(crate) fn take_buffer(&self, ctx_id: i32) -> Option<Vec<u8>> {
+        self.message_cache.borrow_mut().remove(&ctx_id)
     }
     pub(crate) fn call_guest_handler(&self, thread_id: i32, ctx_id: i32, size: i32) {
         loop {
@@ -183,24 +198,28 @@ impl Instance {
             cell.set(*b);
         }
     }
-    fn get_view_bytes(&self, offset: usize, size: usize) -> Vec<u8> {
-        // println!("get_view_bytes: offset:{}, size:{}", offset, size);
+    fn read_view_bytes(&self, offset: usize, size: usize, buffer: &mut Vec<u8>) {
+        // println!("read_view_bytes: offset:{}, size:{}", offset, size);
         let view = self.get_view();
-        view[offset..(offset + size)]
+        if size > buffer.capacity() {
+            buffer.resize(size, 0);
+        }
+        unsafe { buffer.set_len(size) };
+        for x in view[offset..(offset + size)]
             .iter()
-            .map(|c| c.get())
-            .collect()
+            .map(|c| c.get()).enumerate() {
+            buffer[x.0] = x.1;
+        }
     }
     pub(crate) fn gen_ctx_id(&self) -> i32 {
         self.ctx_id_count.replace_with(|v| *v + 1)
     }
-    pub(crate) fn set_guest_request(&self, ctx_id: i32, data: Vec<u8>) -> i32 {
-        let size = data.len() as i32;
-        self.cache_msg_data(ctx_id, data);
-        size
-    }
-    pub(crate) fn get_guest_response(&self, ctx_id: i32) -> Vec<u8> {
-        self.take_msg_data(ctx_id).unwrap_or(vec![])
+    pub(crate) fn try_reuse_buffer(&self, buffer: Vec<u8>) {
+        let next_id = self.ctx_id_count.borrow_mut().clone() + 1;
+        let mut cache = self.message_cache.borrow_mut();
+        if !cache.contains_key(&next_id) {
+            cache.insert(next_id, buffer);
+        }
     }
 }
 
