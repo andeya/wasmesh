@@ -1,11 +1,12 @@
 use std::ffi::OsString;
 use std::net::{AddrParseError, SocketAddr, SocketAddrV4, SocketAddrV6};
 
+use bytes::Bytes;
 use hyper::{Body, Error, Request, Response};
+use hyper::http::request::Parts;
 use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use structopt::StructOpt;
-
 use wasp::*;
 
 use crate::instance::{self, local_instance_ref};
@@ -111,58 +112,40 @@ impl Server {
 
     async fn handle(&self, req: Request<Body>) -> Result<Response<Body>, String> {
         // return Ok(Response::default());
-        let call_msg = req_to_call_msg(req).await;
-
+        let (parts, body) = req.into_parts();
+        let body = hyper::body::to_bytes(body).await.map_or_else(|_| Bytes::new(), |v| v);
+        let builder = build_request(move |build| { to_request(parts, body, build) });
         let (thread_id, ins) = local_instance_ref();
         let ctx_id = ins.gen_ctx_id();
+        let mut buffer = Vec::with_capacity(builder.len());
+        write_message(&mut buffer, &builder).unwrap();
+        ins.call_guest_handler(thread_id as i32, ctx_id, ins.set_guest_request(ctx_id, buffer));
 
-        // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
-        let data = call_msg.write_to_bytes().or_else(|e| Err(format!("{}", e)))?;
-        ins.call_guest_handler(thread_id as i32, ctx_id, ins.set_guest_request(ctx_id, data));
-        let reply_msg = Message::parse_from_bytes(ins
-            .get_guest_response(ctx_id).as_slice()
-        ).unwrap();
-        // println!("========= reply_msg={:?}", reply_msg);
-        Ok(msg_to_resp(reply_msg))
-    }
-}
-
-fn msg_to_resp(msg: Message) -> Response<Body> {
-    let mut resp = Response::builder();
-    for x in msg.headers.iter() {
-        resp = resp.header(x.0, x.1);
-    }
-    match msg.mtype {
-        MessageType::Reply => {
-            resp = resp.status(200);
-        },
-        _ => {
-            resp = resp.status(
-                msg.headers
-                   .get("status")
-                   .unwrap_or(&"200".to_string())
-                   .parse::<u16>().unwrap_or(200));
+        let buffer = ins.get_guest_response(ctx_id);
+        let reader = read_message(&mut buffer.as_slice(), ReaderOptions::new()).unwrap();
+        let resp_reader = reader.get_root::<response::Reader>().unwrap();
+        // println!("========= resp={:?}", resp);
+        let mut resp = Response::builder();
+        for header in resp_reader.get_headers().unwrap() {
+            resp = resp.header(header.get_key().unwrap_or(""), header.get_value().unwrap_or(""));
         }
+        let mut status_code = resp_reader.get_status();
+        if status_code <= 0 {
+            status_code = 200
+        }
+        resp = resp.status(status_code as u16);
+        Ok(resp.body(Body::from(resp_reader.get_body().unwrap_or(&[]).to_owned())).unwrap())
     }
-    resp.body(Body::from(msg.body)).unwrap()
 }
 
-async fn req_to_call_msg(req: Request<Body>) -> Message {
-    let mut msg = Message::new();
-    msg.set_uri(req.uri().to_string());
-    msg.set_seqid(rand::random());
-    msg.set_mtype(MessageType::Call);
-    let (parts, body) = req.into_parts();
-    let body = hyper::body::to_bytes(body).await.map_or_else(|_| Bytes::new(), |v| v);
-
-    for x in parts.headers.iter() {
-        msg.headers.insert(
-            x.0.to_string(),
-            x.1
-             .to_str()
-             .map_or_else(|_| String::new(), |s| s.to_string()),
-        );
+fn to_request(parts: Parts, body: Bytes, mut build: request::Builder) {
+    build.set_uri(parts.uri.to_string().as_str());
+    build.set_seqid(rand::random());
+    let mut headers = build.reborrow().init_headers(parts.headers.len() as u32);
+    for (i, x) in parts.headers.iter().enumerate() {
+        let mut header = headers.reborrow().get(i as u32);
+        header.set_key(x.0.to_string().as_str());
+        header.set_value(x.1.to_str().unwrap_or(""));
     }
-    msg.set_body(body);
-    msg
+    build.set_body(&*body);
 }

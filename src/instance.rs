@@ -116,34 +116,38 @@ impl Instance {
     }
     fn register_import_object(import_object: &mut ImportObject, store: &Store) {
         import_object.register("env", import_namespace!({
-            "_wasp_host_recall_msg" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32| {
-                // println!("_wasp_host_recall_msg: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+            "_wasp_recall_request" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32| {
+                // println!("_wasp_recall_request: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
                 let ins = instance_ref(thread_id as usize);
-                ins.take_msg_data(ctx_id).map(|data|{
+                ins.take_message_data(ctx_id).map(|data|{
                     ins.set_view_bytes(offset as usize, data.iter());
                 });
             }),
-            "_wasp_host_reply_msg" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32| {
-                // println!("_wasp_host_reply_msg: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+            "_wasp_send_response" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32| {
+                // println!("_wasp_send_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
                 let ins = instance_ref(thread_id as usize);
                 let data = ins.get_view_bytes(offset as usize, size as usize);
-                ins.cache_msg_data(ctx_id, data);
+                ins.cache_message_data(ctx_id, data);
             }),
-            "_wasp_host_send_msg" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32|-> i32 {
-                println!("_wasp_host_reply_msg: thread_id:{}, ctx_id:{}, offset:{}, size:{}", thread_id, ctx_id, offset, size);
+            "_wasp_send_request" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32, size: i32|-> i32 {
+                println!("_wasp_send_request: thread_id:{}, ctx_id:{}, offset:{}, size:{}", thread_id, ctx_id, offset, size);
                 // TODO
                 0
+            }),
+            "_wasp_recall_response" => Function::new_native(store, |thread_id: i32, ctx_id: i32, offset: i32| {
+                println!("_wasp_recall_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+                // TODO
             }),
         }));
     }
     fn init(self) -> Self {
         self
     }
-    fn take_msg_data(&self, ctx_id: i32) -> Option<Vec<u8>> {
-        self.message_cache.borrow_mut().remove(&ctx_id)
-    }
-    fn cache_msg_data(&self, ctx_id: i32, data: Vec<u8>) {
+    fn cache_message_data(&self, ctx_id: i32, data: Vec<u8>) {
         self.message_cache.borrow_mut().insert(ctx_id, data);
+    }
+    fn take_message_data(&self, ctx_id: i32) -> Option<Vec<u8>> {
+        self.message_cache.borrow_mut().remove(&ctx_id)
     }
     pub(crate) fn call_guest_handler(&self, thread_id: i32, ctx_id: i32, size: i32) {
         loop {
@@ -196,11 +200,11 @@ impl Instance {
     }
     pub(crate) fn set_guest_request(&self, ctx_id: i32, data: Vec<u8>) -> i32 {
         let size = data.len() as i32;
-        self.cache_msg_data(ctx_id, data);
+        self.cache_message_data(ctx_id, data);
         size
     }
     pub(crate) fn get_guest_response(&self, ctx_id: i32) -> Vec<u8> {
-        self.take_msg_data(ctx_id).unwrap_or(vec![])
+        self.take_message_data(ctx_id).unwrap_or(vec![])
     }
 }
 

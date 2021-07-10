@@ -20,27 +20,19 @@ serde = { version = "1.0", features = ["derive"] }
 rand = "0.8.4"
 wasp = { path = "rust" }
 pretty_env_logger = "0.4"
-
 wapm-cli = "0.5.1"
 structopt = { version = "0.3", features = ["color"] }
 anyhow = "1"
-
 wasmer-compiler-llvm = { version = "2.0.0", optional = true }
 wasmer-compiler-cranelift = { version = "2.0.0", optional = true }
+bytes = { version = "1", features = ["serde"] }
 
 [build-dependencies]
-protoc-rust = "2.0"
+capnpc = "0.14"
 
 [features]
 default = ["wasmer-compiler-cranelift"]
 llvm = ["wasmer-compiler-llvm"]
-
-#[dev-dependencies]
-#wasp = { path = "rust" }
-
-[workspace]
-members = ["rust", "rust/wasp-macros"]
-exclude = ["rust/examples"]
 
 [[bin]]
 name = "wasp"
