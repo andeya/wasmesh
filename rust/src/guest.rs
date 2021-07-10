@@ -32,8 +32,14 @@ pub fn handle_request<F>(thread_id: i32, ctx_id: i32, size: i32, handler: F)
     // let req = recv_request(thread_id, ctx_id, size);
     let resp = handler(req);
     if let Some(resp) = resp {
-        buffer.truncate(0);
-        resp.write_to_vec(&mut buffer).unwrap();
+        let size = resp.compute_size() as usize;
+        if size > buffer.capacity() {
+            buffer.resize(size, 0);
+        }
+        unsafe { buffer.set_len(size) };
+        let mut os = CodedOutputStream::bytes(&mut buffer);
+        resp.write_to_with_cached_sizes(&mut os)
+            .or_else(|e| Err(format!("{}", e))).unwrap();
         unsafe { _wasp_send_response(thread_id, ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
     }
 }

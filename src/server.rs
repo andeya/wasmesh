@@ -115,13 +115,26 @@ impl Server {
         let (thread_id, ins) = local_instance_ref();
         let ctx_id = ins.gen_ctx_id();
 
+        let buffer_len = ins.use_mut_buffer(ctx_id, req.compute_size() as usize, |buffer| {
+            let size = req.compute_size() as usize;
+            if size > buffer.capacity() {
+                buffer.resize(size, 0);
+            }
+            unsafe { buffer.set_len(size) };
+            let mut os = CodedOutputStream::bytes(buffer);
+            req.write_to_with_cached_sizes(&mut os)
+               .or_else(|e| Err(format!("{}", e))).unwrap();
+            buffer.len()
+        });
+
+        ins.call_guest_handler(thread_id as i32, ctx_id, buffer_len as i32);
         // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
-        let data = req.write_to_bytes().or_else(|e| Err(format!("{}", e)))?;
-        ins.call_guest_handler(thread_id as i32, ctx_id, ins.set_guest_request(ctx_id, data));
-        let resp = Response::parse_from_bytes(ins
-            .get_guest_response(ctx_id).as_slice()
-        ).unwrap();
-        // println!("========= reply_msg={:?}", reply_msg);
+
+        let buffer = ins.take_buffer(ctx_id).unwrap_or(vec![]);
+        let resp = Response::parse_from_bytes(buffer.as_slice()).unwrap();
+
+        ins.try_reuse_buffer(buffer);
+        // println!("========= resp={:?}", resp);
         Ok(to_http_response(resp))
     }
 }
