@@ -1,9 +1,8 @@
 pub use bytes;
 pub use bytes::Bytes;
+pub use message::{Request, Response};
 pub use protobuf;
-pub use protobuf::Message as TMessage;
-
-pub use message::{Message, MessageType};
+pub use protobuf::Message;
 pub use wasp_macros::handler;
 
 pub mod errors;

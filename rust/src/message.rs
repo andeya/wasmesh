@@ -25,11 +25,11 @@
 
 #[derive(PartialEq,Clone,Default)]
 #[cfg_attr(feature = "with-serde", derive(::serde::Serialize, ::serde::Deserialize))]
-pub struct Message {
+pub struct Request {
     // message fields
-    pub uri: ::std::string::String,
-    pub mtype: MessageType,
+    pub oneway: bool,
     pub seqid: i32,
+    pub uri: ::std::string::String,
     pub headers: ::std::collections::HashMap<::std::string::String, ::std::string::String>,
     pub body: ::bytes::Bytes,
     // special fields
@@ -39,18 +39,48 @@ pub struct Message {
     pub cached_size: ::protobuf::CachedSize,
 }
 
-impl<'a> ::std::default::Default for &'a Message {
-    fn default() -> &'a Message {
-        <Message as ::protobuf::Message>::default_instance()
+impl<'a> ::std::default::Default for &'a Request {
+    fn default() -> &'a Request {
+        <Request as ::protobuf::Message>::default_instance()
     }
 }
 
-impl Message {
-    pub fn new() -> Message {
+impl Request {
+    pub fn new() -> Request {
         ::std::default::Default::default()
     }
 
-    // string uri = 1;
+    // bool oneway = 1;
+
+
+    pub fn get_oneway(&self) -> bool {
+        self.oneway
+    }
+    pub fn clear_oneway(&mut self) {
+        self.oneway = false;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_oneway(&mut self, v: bool) {
+        self.oneway = v;
+    }
+
+    // int32 seqid = 2;
+
+
+    pub fn get_seqid(&self) -> i32 {
+        self.seqid
+    }
+    pub fn clear_seqid(&mut self) {
+        self.seqid = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_seqid(&mut self, v: i32) {
+        self.seqid = v;
+    }
+
+    // string uri = 3;
 
 
     pub fn get_uri(&self) -> &str {
@@ -76,37 +106,7 @@ impl Message {
         ::std::mem::replace(&mut self.uri, ::std::string::String::new())
     }
 
-    // .MessageType mtype = 2;
-
-
-    pub fn get_mtype(&self) -> MessageType {
-        self.mtype
-    }
-    pub fn clear_mtype(&mut self) {
-        self.mtype = MessageType::Unknown;
-    }
-
-    // Param is passed by value, moved
-    pub fn set_mtype(&mut self, v: MessageType) {
-        self.mtype = v;
-    }
-
-    // int32 seqid = 3;
-
-
-    pub fn get_seqid(&self) -> i32 {
-        self.seqid
-    }
-    pub fn clear_seqid(&mut self) {
-        self.seqid = 0;
-    }
-
-    // Param is passed by value, moved
-    pub fn set_seqid(&mut self, v: i32) {
-        self.seqid = v;
-    }
-
-    // repeated .Message.HeadersEntry headers = 4;
+    // repeated .Request.HeadersEntry headers = 4;
 
 
     pub fn get_headers(&self) -> &::std::collections::HashMap<::std::string::String, ::std::string::String> {
@@ -158,7 +158,7 @@ impl Message {
     }
 }
 
-impl ::protobuf::Message for Message {
+impl ::protobuf::Message for Request {
     fn is_initialized(&self) -> bool {
         true
     }
@@ -168,17 +168,21 @@ impl ::protobuf::Message for Message {
             let (field_number, wire_type) = is.read_tag_unpack()?;
             match field_number {
                 1 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.uri)?;
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_bool()?;
+                    self.oneway = tmp;
                 },
                 2 => {
-                    ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.mtype, 2, &mut self.unknown_fields)?
-                },
-                3 => {
                     if wire_type != ::protobuf::wire_format::WireTypeVarint {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
                     let tmp = is.read_int32()?;
                     self.seqid = tmp;
+                },
+                3 => {
+                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.uri)?;
                 },
                 4 => {
                     ::protobuf::rt::read_map_into::<::protobuf::types::ProtobufTypeString, ::protobuf::types::ProtobufTypeString>(wire_type, is, &mut self.headers)?;
@@ -198,14 +202,14 @@ impl ::protobuf::Message for Message {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
-        if !self.uri.is_empty() {
-            my_size += ::protobuf::rt::string_size(1, &self.uri);
-        }
-        if self.mtype != MessageType::Unknown {
-            my_size += ::protobuf::rt::enum_size(2, self.mtype);
+        if self.oneway != false {
+            my_size += 2;
         }
         if self.seqid != 0 {
-            my_size += ::protobuf::rt::value_size(3, self.seqid, ::protobuf::wire_format::WireTypeVarint);
+            my_size += ::protobuf::rt::value_size(2, self.seqid, ::protobuf::wire_format::WireTypeVarint);
+        }
+        if !self.uri.is_empty() {
+            my_size += ::protobuf::rt::string_size(3, &self.uri);
         }
         my_size += ::protobuf::rt::compute_map_size::<::protobuf::types::ProtobufTypeString, ::protobuf::types::ProtobufTypeString>(4, &self.headers);
         if !self.body.is_empty() {
@@ -217,14 +221,14 @@ impl ::protobuf::Message for Message {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        if !self.uri.is_empty() {
-            os.write_string(1, &self.uri)?;
-        }
-        if self.mtype != MessageType::Unknown {
-            os.write_enum(2, ::protobuf::ProtobufEnum::value(&self.mtype))?;
+        if self.oneway != false {
+            os.write_bool(1, self.oneway)?;
         }
         if self.seqid != 0 {
-            os.write_int32(3, self.seqid)?;
+            os.write_int32(2, self.seqid)?;
+        }
+        if !self.uri.is_empty() {
+            os.write_string(3, &self.uri)?;
         }
         ::protobuf::rt::write_map_with_cached_sizes::<::protobuf::types::ProtobufTypeString, ::protobuf::types::ProtobufTypeString>(4, &self.headers, os)?;
         if !self.body.is_empty() {
@@ -260,146 +264,358 @@ impl ::protobuf::Message for Message {
         Self::descriptor_static()
     }
 
-    fn new() -> Message {
-        Message::new()
+    fn new() -> Request {
+        Request::new()
     }
 
     fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
         static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::MessageDescriptor> = ::protobuf::rt::LazyV2::INIT;
         descriptor.get(|| {
             let mut fields = ::std::vec::Vec::new();
-            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
-                "uri",
-                |m: &Message| { &m.uri },
-                |m: &mut Message| { &mut m.uri },
-            ));
-            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeEnum<MessageType>>(
-                "mtype",
-                |m: &Message| { &m.mtype },
-                |m: &mut Message| { &mut m.mtype },
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBool>(
+                "oneway",
+                |m: &Request| { &m.oneway },
+                |m: &mut Request| { &mut m.oneway },
             ));
             fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeInt32>(
                 "seqid",
-                |m: &Message| { &m.seqid },
-                |m: &mut Message| { &mut m.seqid },
+                |m: &Request| { &m.seqid },
+                |m: &mut Request| { &mut m.seqid },
+            ));
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                "uri",
+                |m: &Request| { &m.uri },
+                |m: &mut Request| { &mut m.uri },
             ));
             fields.push(::protobuf::reflect::accessor::make_map_accessor::<_, ::protobuf::types::ProtobufTypeString, ::protobuf::types::ProtobufTypeString>(
                 "headers",
-                |m: &Message| { &m.headers },
-                |m: &mut Message| { &mut m.headers },
+                |m: &Request| { &m.headers },
+                |m: &mut Request| { &mut m.headers },
             ));
             fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeCarllercheBytes>(
                 "body",
-                |m: &Message| { &m.body },
-                |m: &mut Message| { &mut m.body },
+                |m: &Request| { &m.body },
+                |m: &mut Request| { &mut m.body },
             ));
-            ::protobuf::reflect::MessageDescriptor::new_pb_name::<Message>(
-                "Message",
+            ::protobuf::reflect::MessageDescriptor::new_pb_name::<Request>(
+                "Request",
                 fields,
                 file_descriptor_proto()
             )
         })
     }
 
-    fn default_instance() -> &'static Message {
-        static instance: ::protobuf::rt::LazyV2<Message> = ::protobuf::rt::LazyV2::INIT;
-        instance.get(Message::new)
+    fn default_instance() -> &'static Request {
+        static instance: ::protobuf::rt::LazyV2<Request> = ::protobuf::rt::LazyV2::INIT;
+        instance.get(Request::new)
     }
 }
 
-impl ::protobuf::Clear for Message {
+impl ::protobuf::Clear for Request {
     fn clear(&mut self) {
-        self.uri.clear();
-        self.mtype = MessageType::Unknown;
+        self.oneway = false;
         self.seqid = 0;
+        self.uri.clear();
         self.headers.clear();
         self.body.clear();
         self.unknown_fields.clear();
     }
 }
 
-impl ::std::fmt::Debug for Message {
+impl ::std::fmt::Debug for Request {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         ::protobuf::text_format::fmt(self, f)
     }
 }
 
-impl ::protobuf::reflect::ProtobufValue for Message {
+impl ::protobuf::reflect::ProtobufValue for Request {
     fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
         ::protobuf::reflect::ReflectValueRef::Message(self)
     }
 }
 
-#[derive(Clone,PartialEq,Eq,Debug,Hash)]
+#[derive(PartialEq,Clone,Default)]
 #[cfg_attr(feature = "with-serde", derive(::serde::Serialize, ::serde::Deserialize))]
-pub enum MessageType {
-    Unknown = 0,
-    Call = 1,
-    Reply = 2,
-    Exception = 3,
-    OneWay = 4,
+pub struct Response {
+    // message fields
+    pub seqid: i32,
+    pub status: i32,
+    pub headers: ::std::collections::HashMap<::std::string::String, ::std::string::String>,
+    pub body: ::bytes::Bytes,
+    // special fields
+    #[cfg_attr(feature = "with-serde", serde(skip))]
+    pub unknown_fields: ::protobuf::UnknownFields,
+    #[cfg_attr(feature = "with-serde", serde(skip))]
+    pub cached_size: ::protobuf::CachedSize,
 }
 
-impl ::protobuf::ProtobufEnum for MessageType {
-    fn value(&self) -> i32 {
-        *self as i32
+impl<'a> ::std::default::Default for &'a Response {
+    fn default() -> &'a Response {
+        <Response as ::protobuf::Message>::default_instance()
+    }
+}
+
+impl Response {
+    pub fn new() -> Response {
+        ::std::default::Default::default()
     }
 
-    fn from_i32(value: i32) -> ::std::option::Option<MessageType> {
-        match value {
-            0 => ::std::option::Option::Some(MessageType::Unknown),
-            1 => ::std::option::Option::Some(MessageType::Call),
-            2 => ::std::option::Option::Some(MessageType::Reply),
-            3 => ::std::option::Option::Some(MessageType::Exception),
-            4 => ::std::option::Option::Some(MessageType::OneWay),
-            _ => ::std::option::Option::None
+    // int32 seqid = 1;
+
+
+    pub fn get_seqid(&self) -> i32 {
+        self.seqid
+    }
+    pub fn clear_seqid(&mut self) {
+        self.seqid = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_seqid(&mut self, v: i32) {
+        self.seqid = v;
+    }
+
+    // int32 status = 2;
+
+
+    pub fn get_status(&self) -> i32 {
+        self.status
+    }
+    pub fn clear_status(&mut self) {
+        self.status = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_status(&mut self, v: i32) {
+        self.status = v;
+    }
+
+    // repeated .Response.HeadersEntry headers = 3;
+
+
+    pub fn get_headers(&self) -> &::std::collections::HashMap<::std::string::String, ::std::string::String> {
+        &self.headers
+    }
+    pub fn clear_headers(&mut self) {
+        self.headers.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_headers(&mut self, v: ::std::collections::HashMap<::std::string::String, ::std::string::String>) {
+        self.headers = v;
+    }
+
+    // Mutable pointer to the field.
+    pub fn mut_headers(&mut self) -> &mut ::std::collections::HashMap<::std::string::String, ::std::string::String> {
+        &mut self.headers
+    }
+
+    // Take field
+    pub fn take_headers(&mut self) -> ::std::collections::HashMap<::std::string::String, ::std::string::String> {
+        ::std::mem::replace(&mut self.headers, ::std::collections::HashMap::new())
+    }
+
+    // bytes body = 4;
+
+
+    pub fn get_body(&self) -> &[u8] {
+        &self.body
+    }
+    pub fn clear_body(&mut self) {
+        self.body.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_body(&mut self, v: ::bytes::Bytes) {
+        self.body = v;
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_body(&mut self) -> &mut ::bytes::Bytes {
+        &mut self.body
+    }
+
+    // Take field
+    pub fn take_body(&mut self) -> ::bytes::Bytes {
+        ::std::mem::replace(&mut self.body, ::bytes::Bytes::new())
+    }
+}
+
+impl ::protobuf::Message for Response {
+    fn is_initialized(&self) -> bool {
+        true
+    }
+
+    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        while !is.eof()? {
+            let (field_number, wire_type) = is.read_tag_unpack()?;
+            match field_number {
+                1 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_int32()?;
+                    self.seqid = tmp;
+                },
+                2 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_int32()?;
+                    self.status = tmp;
+                },
+                3 => {
+                    ::protobuf::rt::read_map_into::<::protobuf::types::ProtobufTypeString, ::protobuf::types::ProtobufTypeString>(wire_type, is, &mut self.headers)?;
+                },
+                4 => {
+                    ::protobuf::rt::read_singular_proto3_carllerche_bytes_into(wire_type, is, &mut self.body)?;
+                },
+                _ => {
+                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
+                },
+            };
         }
+        ::std::result::Result::Ok(())
     }
 
-    fn values() -> &'static [Self] {
-        static values: &'static [MessageType] = &[
-            MessageType::Unknown,
-            MessageType::Call,
-            MessageType::Reply,
-            MessageType::Exception,
-            MessageType::OneWay,
-        ];
-        values
+    // Compute sizes of nested messages
+    #[allow(unused_variables)]
+    fn compute_size(&self) -> u32 {
+        let mut my_size = 0;
+        if self.seqid != 0 {
+            my_size += ::protobuf::rt::value_size(1, self.seqid, ::protobuf::wire_format::WireTypeVarint);
+        }
+        if self.status != 0 {
+            my_size += ::protobuf::rt::value_size(2, self.status, ::protobuf::wire_format::WireTypeVarint);
+        }
+        my_size += ::protobuf::rt::compute_map_size::<::protobuf::types::ProtobufTypeString, ::protobuf::types::ProtobufTypeString>(3, &self.headers);
+        if !self.body.is_empty() {
+            my_size += ::protobuf::rt::bytes_size(4, &self.body);
+        }
+        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
+        self.cached_size.set(my_size);
+        my_size
     }
 
-    fn enum_descriptor_static() -> &'static ::protobuf::reflect::EnumDescriptor {
-        static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::EnumDescriptor> = ::protobuf::rt::LazyV2::INIT;
+    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        if self.seqid != 0 {
+            os.write_int32(1, self.seqid)?;
+        }
+        if self.status != 0 {
+            os.write_int32(2, self.status)?;
+        }
+        ::protobuf::rt::write_map_with_cached_sizes::<::protobuf::types::ProtobufTypeString, ::protobuf::types::ProtobufTypeString>(3, &self.headers, os)?;
+        if !self.body.is_empty() {
+            os.write_bytes(4, &self.body)?;
+        }
+        os.write_unknown_fields(self.get_unknown_fields())?;
+        ::std::result::Result::Ok(())
+    }
+
+    fn get_cached_size(&self) -> u32 {
+        self.cached_size.get()
+    }
+
+    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
+        &self.unknown_fields
+    }
+
+    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
+        &mut self.unknown_fields
+    }
+
+    fn as_any(&self) -> &dyn (::std::any::Any) {
+        self as &dyn (::std::any::Any)
+    }
+    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
+        self as &mut dyn (::std::any::Any)
+    }
+    fn into_any(self: ::std::boxed::Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
+        self
+    }
+
+    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
+        Self::descriptor_static()
+    }
+
+    fn new() -> Response {
+        Response::new()
+    }
+
+    fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
+        static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::MessageDescriptor> = ::protobuf::rt::LazyV2::INIT;
         descriptor.get(|| {
-            ::protobuf::reflect::EnumDescriptor::new_pb_name::<MessageType>("MessageType", file_descriptor_proto())
+            let mut fields = ::std::vec::Vec::new();
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeInt32>(
+                "seqid",
+                |m: &Response| { &m.seqid },
+                |m: &mut Response| { &mut m.seqid },
+            ));
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeInt32>(
+                "status",
+                |m: &Response| { &m.status },
+                |m: &mut Response| { &mut m.status },
+            ));
+            fields.push(::protobuf::reflect::accessor::make_map_accessor::<_, ::protobuf::types::ProtobufTypeString, ::protobuf::types::ProtobufTypeString>(
+                "headers",
+                |m: &Response| { &m.headers },
+                |m: &mut Response| { &mut m.headers },
+            ));
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeCarllercheBytes>(
+                "body",
+                |m: &Response| { &m.body },
+                |m: &mut Response| { &mut m.body },
+            ));
+            ::protobuf::reflect::MessageDescriptor::new_pb_name::<Response>(
+                "Response",
+                fields,
+                file_descriptor_proto()
+            )
         })
     }
-}
 
-impl ::std::marker::Copy for MessageType {
-}
-
-impl ::std::default::Default for MessageType {
-    fn default() -> Self {
-        MessageType::Unknown
+    fn default_instance() -> &'static Response {
+        static instance: ::protobuf::rt::LazyV2<Response> = ::protobuf::rt::LazyV2::INIT;
+        instance.get(Response::new)
     }
 }
 
-impl ::protobuf::reflect::ProtobufValue for MessageType {
+impl ::protobuf::Clear for Response {
+    fn clear(&mut self) {
+        self.seqid = 0;
+        self.status = 0;
+        self.headers.clear();
+        self.body.clear();
+        self.unknown_fields.clear();
+    }
+}
+
+impl ::std::fmt::Debug for Response {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        ::protobuf::text_format::fmt(self, f)
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for Response {
     fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
-        ::protobuf::reflect::ReflectValueRef::Enum(::protobuf::ProtobufEnum::descriptor(self))
+        ::protobuf::reflect::ReflectValueRef::Message(self)
     }
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\rmessage.proto\"\xd6\x01\n\x07Message\x12\x10\n\x03uri\x18\x01\x20\
-    \x01(\tR\x03uri\x12\"\n\x05mtype\x18\x02\x20\x01(\x0e2\x0c.MessageTypeR\
-    \x05mtype\x12\x14\n\x05seqid\x18\x03\x20\x01(\x05R\x05seqid\x12/\n\x07he\
-    aders\x18\x04\x20\x03(\x0b2\x15.Message.HeadersEntryR\x07headers\x12\x12\
-    \n\x04body\x18\x05\x20\x01(\x0cR\x04body\x1a:\n\x0cHeadersEntry\x12\x10\
-    \n\x03key\x18\x01\x20\x01(\tR\x03key\x12\x14\n\x05value\x18\x02\x20\x01(\
-    \tR\x05value:\x028\x01*J\n\x0bMessageType\x12\x0b\n\x07Unknown\x10\0\x12\
-    \x08\n\x04Call\x10\x01\x12\t\n\x05Reply\x10\x02\x12\r\n\tException\x10\
-    \x03\x12\n\n\x06OneWay\x10\x04b\x06proto3\
+    \n\rmessage.proto\"\xca\x01\n\x07Request\x12\x16\n\x06oneway\x18\x01\x20\
+    \x01(\x08R\x06oneway\x12\x14\n\x05seqid\x18\x02\x20\x01(\x05R\x05seqid\
+    \x12\x10\n\x03uri\x18\x03\x20\x01(\tR\x03uri\x12/\n\x07headers\x18\x04\
+    \x20\x03(\x0b2\x15.Request.HeadersEntryR\x07headers\x12\x12\n\x04body\
+    \x18\x05\x20\x01(\x0cR\x04body\x1a:\n\x0cHeadersEntry\x12\x10\n\x03key\
+    \x18\x01\x20\x01(\tR\x03key\x12\x14\n\x05value\x18\x02\x20\x01(\tR\x05va\
+    lue:\x028\x01\"\xba\x01\n\x08Response\x12\x14\n\x05seqid\x18\x01\x20\x01\
+    (\x05R\x05seqid\x12\x16\n\x06status\x18\x02\x20\x01(\x05R\x06status\x120\
+    \n\x07headers\x18\x03\x20\x03(\x0b2\x16.Response.HeadersEntryR\x07header\
+    s\x12\x12\n\x04body\x18\x04\x20\x01(\x0cR\x04body\x1a:\n\x0cHeadersEntry\
+    \x12\x10\n\x03key\x18\x01\x20\x01(\tR\x03key\x12\x14\n\x05value\x18\x02\
+    \x20\x01(\tR\x05value:\x028\x01b\x06proto3\
 ";
 
 static file_descriptor_proto_lazy: ::protobuf::rt::LazyV2<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::rt::LazyV2::INIT;

@@ -35,9 +35,6 @@ protoc-rust = "2.0"
 default = ["wasmer-compiler-cranelift"]
 llvm = ["wasmer-compiler-llvm"]
 
-#[dev-dependencies]
-#wasp = { path = "rust" }
-
 [[bin]]
 name = "wasp"
 path = "./src/main.rs"
