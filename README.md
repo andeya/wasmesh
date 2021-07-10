@@ -44,8 +44,9 @@ wasp serve --threads=16 127.0.0.1:9090 rust/examples/simple/target/wasm32-wasi/r
 
 ## Benchmark
 
-MacBook Pro (13-inch, 2020, Four Thunderbolt 3 ports)
-CPU: 2.3 GHz 4 Cores Intel Core i7 Mem: 32 GB 3733 MHz LPDDR4X
+- MacBook Pro (13-inch, 2020, Four Thunderbolt 3 ports)
+- CPU: 2.3 GHz 4 Cores Intel Core i7
+- Mem: 32 GB 3733 MHz LPDDR4X
 
 ```shell
 ab -c 100 -n 10000 http://127.0.0.1:9090/
