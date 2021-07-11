@@ -9,6 +9,7 @@ use wasmer_compiler_cranelift::Cranelift;
 use wasmer_compiler_llvm::LLVM;
 use wasmer_engine_universal::Universal;
 use wasmer_wasi::{WasiEnv, WasiState};
+use wasp::*;
 
 use crate::server::ServeOpt;
 
@@ -23,8 +24,8 @@ static mut INSTANCES: Vec<Instance> = Vec::new();
 
 fn instance_ref(index: usize) -> &'static Instance {
     let real_index = index % unsafe { INSTANCES.len() };
-        #[cfg(debug_assertions)]
-        println!("index: {}%{}={}", index, unsafe { INSTANCES.len() }, real_index);
+    #[cfg(debug_assertions)]
+    println!("index: {}%{}={}", index, unsafe { INSTANCES.len() }, real_index);
     return unsafe { &INSTANCES[real_index] }
 }
 
@@ -117,17 +118,12 @@ impl Instance {
     fn register_import_object(import_object: &mut ImportObject, store: &Store) {
         import_object.register("env", import_namespace!({
             "_wasp_recall_request" => Function::new_native(store, |ctx_id: i64, offset: i32| {
-                let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
-                // println!("_wasp_recall_request: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
-                let ins = instance_ref(thread_id);
-                let _ = ins.use_mut_buffer(ctx_id, 0, |data|{
-                    ins.set_view_bytes(offset as usize, data.iter());
-                    data.len()
-                });
+                recall_data_from_buffer(ctx_id, offset)
             }),
             "_wasp_send_response" => Function::new_native(store, |ctx_id: i64, offset: i32, size: i32| {
                 let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
-                // println!("_wasp_send_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+                #[cfg(debug_assertions)]
+                println!("_wasp_send_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
                 let ins = instance_ref(thread_id as usize);
                 let _ = ins.use_mut_buffer(ctx_id, size as usize, |buffer|{
                     ins.read_view_bytes(offset as usize, size as usize, buffer);
@@ -136,14 +132,18 @@ impl Instance {
             }),
             "_wasp_send_request" => Function::new_native(store, |ctx_id: i64, offset: i32, size: i32|-> i32 {
                 let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
+                #[cfg(debug_assertions)]
                 println!("_wasp_send_request: thread_id:{}, ctx_id:{}, offset:{}, size:{}", thread_id, ctx_id, offset, size);
-                // TODO
-                0
+                let ins = instance_ref(thread_id as usize);
+                ins.use_mut_buffer(ctx_id, size as usize, |buffer|{
+                    ins.read_view_bytes(offset as usize, size as usize, buffer);
+                    let req = Request::parse_from_bytes(buffer.as_slice()).unwrap();
+                    let resp = crate::client::do_request(req).unwrap();
+                    write_to_vec(resp,buffer)
+                }) as i32
             }),
             "_wasp_recall_response" => Function::new_native(store, |ctx_id: i64, offset: i32| {
-                let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
-                println!("_wasp_recall_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
-                // TODO
+                recall_data_from_buffer(ctx_id, offset)
             }),
         }));
     }
@@ -257,4 +257,27 @@ fn current_thread_id() -> usize {
         .join("")
         .parse().unwrap();
     return thread_id;
+}
+
+pub(crate) fn write_to_vec<M: Message>(msg: M, buffer: &mut Vec<u8>) -> usize {
+    let size = msg.compute_size() as usize;
+    if size > buffer.capacity() {
+        buffer.resize(size, 0);
+    }
+    unsafe { buffer.set_len(size) };
+    let mut os = CodedOutputStream::bytes(buffer);
+    msg.write_to_with_cached_sizes(&mut os)
+       .or_else(|e| Err(format!("{}", e))).unwrap();
+    buffer.len()
+}
+
+fn recall_data_from_buffer(ctx_id: i64, offset: i32) {
+    let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
+    #[cfg(debug_assertions)]
+    println!("_wasp_recall_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+    let ins = instance_ref(thread_id);
+    let _ = ins.use_mut_buffer(ctx_id, 0, |data| {
+        ins.set_view_bytes(offset as usize, data.iter());
+        data.len()
+    });
 }

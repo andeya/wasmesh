@@ -7,7 +7,8 @@ use hyper::service::{make_service_fn, service_fn};
 use structopt::StructOpt;
 use wasp::*;
 
-use crate::instance::{self, local_instance_ref};
+use crate::instance::{self, local_instance_ref, write_to_vec};
+use crate::client::{to_request, to_http_response};
 
 #[derive(StructOpt, Debug, Clone)]
 pub struct ServeOpt {
@@ -110,22 +111,26 @@ impl Server {
 
     async fn handle(&self, req: HttpRequest<Body>) -> Result<HttpResponse<Body>, String> {
         // return Ok(Response::default());
-        let req = to_request(req).await;
+        let mut req = to_request(req).await;
 
         let (thread_id, ins) = local_instance_ref();
         let ctx_id = ins.gen_ctx_id(thread_id);
+
+        // TODO:
+        req.set_seqid(ctx_id as i32);
+
         #[cfg(debug_assertions)]
         println!("thread_id:{}, ctx_id:{}", thread_id, ctx_id);
         let buffer_len = ins.use_mut_buffer(ctx_id, req.compute_size() as usize, |buffer| {
-            let size = req.compute_size() as usize;
-            if size > buffer.capacity() {
-                buffer.resize(size, 0);
-            }
-            unsafe { buffer.set_len(size) };
-            let mut os = CodedOutputStream::bytes(buffer);
-            req.write_to_with_cached_sizes(&mut os)
-               .or_else(|e| Err(format!("{}", e))).unwrap();
-            buffer.len()
+            write_to_vec(req, buffer)
+            // let size = req.compute_size() as usize;
+            // if size > buffer.capacity() {
+            //     buffer.resize(size, 0);
+            // }
+            // unsafe { buffer.set_len(size) };
+            // let mut os = CodedOutputStream::bytes(buffer);
+            // req.write_to_with_cached_sizes(&mut os)
+            //    .or_else(|e| Err(format!("{}", e))).unwrap();
         });
 
         ins.call_guest_handler(ctx_id, buffer_len as i32);
@@ -138,35 +143,4 @@ impl Server {
         // println!("========= resp={:?}", resp);
         Ok(to_http_response(resp))
     }
-}
-
-fn to_http_response(mut msg: Response) -> HttpResponse<Body> {
-    let mut resp = HttpResponse::builder();
-    for x in msg.headers.iter() {
-        resp = resp.header(x.0, x.1);
-    }
-    if msg.status <= 0 {
-        msg.status = 200
-    }
-    resp = resp.status(msg.status as u16);
-    resp.body(Body::from(msg.body)).unwrap()
-}
-
-async fn to_request(req: HttpRequest<Body>) -> Request {
-    let mut msg = Request::new();
-    msg.set_uri(req.uri().to_string());
-    msg.set_seqid(rand::random());
-    let (parts, body) = req.into_parts();
-    let body = hyper::body::to_bytes(body).await.map_or_else(|_| Bytes::new(), |v| v);
-
-    for x in parts.headers.iter() {
-        msg.headers.insert(
-            x.0.to_string(),
-            x.1
-             .to_str()
-             .map_or_else(|_| String::new(), |s| s.to_string()),
-        );
-    }
-    msg.set_body(body);
-    msg
 }

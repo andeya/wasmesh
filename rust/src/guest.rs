@@ -14,7 +14,7 @@ extern "C" {
 
 pub fn handle_request<F>(ctx_id: i64, size: i32, handler: F)
     where
-        F: Fn(Request) -> Option<Response>,
+        F: Fn(i64, Request) -> Option<Response>,
 {
     let mut buffer = vec![0u8; size as usize];
     let req = {
@@ -30,7 +30,7 @@ pub fn handle_request<F>(ctx_id: i64, size: i32, handler: F)
         }
     };
     // let req = recv_request( ctx_id, size);
-    let resp = handler(req);
+    let resp = handler(ctx_id, req);
     if let Some(resp) = resp {
         let size = resp.compute_size() as usize;
         if size > buffer.capacity() {
@@ -60,7 +60,7 @@ pub fn handle_request<F>(ctx_id: i64, size: i32, handler: F)
 pub fn do_request(ctx_id: i64, req: Request) -> Option<Response> {
     let mut buffer = req.write_to_bytes().unwrap();
     let size = unsafe { _wasp_send_request(ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
-    if size <= 0 || req.get_oneway() {
+    if size <= 0 || req.get_method() == Method::ONEWAY {
         return None
     }
     buffer.resize(size as usize, 0);

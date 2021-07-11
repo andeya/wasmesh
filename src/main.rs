@@ -9,6 +9,7 @@ use crate::server::{serve, ServeOpt};
 
 mod server;
 mod instance;
+mod client;
 
 #[derive(StructOpt, Debug)]
 #[structopt(global_settings = & [AppSettings::VersionlessSubcommands, AppSettings::ColorAuto, AppSettings::ColoredHelp])]

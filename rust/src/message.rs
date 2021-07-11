@@ -28,7 +28,7 @@
 pub struct Request {
     // message fields
     pub seqid: i32,
-    pub oneway: bool,
+    pub method: Method,
     pub uri: ::std::string::String,
     pub headers: ::std::collections::HashMap<::std::string::String, ::std::string::String>,
     pub body: ::bytes::Bytes,
@@ -65,19 +65,19 @@ impl Request {
         self.seqid = v;
     }
 
-    // bool oneway = 2;
+    // .Method method = 2;
 
 
-    pub fn get_oneway(&self) -> bool {
-        self.oneway
+    pub fn get_method(&self) -> Method {
+        self.method
     }
-    pub fn clear_oneway(&mut self) {
-        self.oneway = false;
+    pub fn clear_method(&mut self) {
+        self.method = Method::GET;
     }
 
     // Param is passed by value, moved
-    pub fn set_oneway(&mut self, v: bool) {
-        self.oneway = v;
+    pub fn set_method(&mut self, v: Method) {
+        self.method = v;
     }
 
     // string uri = 3;
@@ -175,11 +175,7 @@ impl ::protobuf::Message for Request {
                     self.seqid = tmp;
                 },
                 2 => {
-                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
-                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
-                    }
-                    let tmp = is.read_bool()?;
-                    self.oneway = tmp;
+                    ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.method, 2, &mut self.unknown_fields)?
                 },
                 3 => {
                     ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.uri)?;
@@ -205,8 +201,8 @@ impl ::protobuf::Message for Request {
         if self.seqid != 0 {
             my_size += ::protobuf::rt::value_size(1, self.seqid, ::protobuf::wire_format::WireTypeVarint);
         }
-        if self.oneway != false {
-            my_size += 2;
+        if self.method != Method::GET {
+            my_size += ::protobuf::rt::enum_size(2, self.method);
         }
         if !self.uri.is_empty() {
             my_size += ::protobuf::rt::string_size(3, &self.uri);
@@ -224,8 +220,8 @@ impl ::protobuf::Message for Request {
         if self.seqid != 0 {
             os.write_int32(1, self.seqid)?;
         }
-        if self.oneway != false {
-            os.write_bool(2, self.oneway)?;
+        if self.method != Method::GET {
+            os.write_enum(2, ::protobuf::ProtobufEnum::value(&self.method))?;
         }
         if !self.uri.is_empty() {
             os.write_string(3, &self.uri)?;
@@ -277,10 +273,10 @@ impl ::protobuf::Message for Request {
                 |m: &Request| { &m.seqid },
                 |m: &mut Request| { &mut m.seqid },
             ));
-            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBool>(
-                "oneway",
-                |m: &Request| { &m.oneway },
-                |m: &mut Request| { &mut m.oneway },
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeEnum<Method>>(
+                "method",
+                |m: &Request| { &m.method },
+                |m: &mut Request| { &mut m.method },
             ));
             fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
                 "uri",
@@ -314,7 +310,7 @@ impl ::protobuf::Message for Request {
 impl ::protobuf::Clear for Request {
     fn clear(&mut self) {
         self.seqid = 0;
-        self.oneway = false;
+        self.method = Method::GET;
         self.uri.clear();
         self.headers.clear();
         self.body.clear();
@@ -603,19 +599,98 @@ impl ::protobuf::reflect::ProtobufValue for Response {
     }
 }
 
+#[derive(Clone,PartialEq,Eq,Debug,Hash)]
+#[cfg_attr(feature = "with-serde", derive(::serde::Serialize, ::serde::Deserialize))]
+pub enum Method {
+    GET = 0,
+    HEAD = 1,
+    POST = 2,
+    PUT = 3,
+    DELETE = 4,
+    CONNECT = 5,
+    OPTIONS = 6,
+    TRACE = 7,
+    PATCH = 8,
+    ONEWAY = 9,
+}
+
+impl ::protobuf::ProtobufEnum for Method {
+    fn value(&self) -> i32 {
+        *self as i32
+    }
+
+    fn from_i32(value: i32) -> ::std::option::Option<Method> {
+        match value {
+            0 => ::std::option::Option::Some(Method::GET),
+            1 => ::std::option::Option::Some(Method::HEAD),
+            2 => ::std::option::Option::Some(Method::POST),
+            3 => ::std::option::Option::Some(Method::PUT),
+            4 => ::std::option::Option::Some(Method::DELETE),
+            5 => ::std::option::Option::Some(Method::CONNECT),
+            6 => ::std::option::Option::Some(Method::OPTIONS),
+            7 => ::std::option::Option::Some(Method::TRACE),
+            8 => ::std::option::Option::Some(Method::PATCH),
+            9 => ::std::option::Option::Some(Method::ONEWAY),
+            _ => ::std::option::Option::None
+        }
+    }
+
+    fn values() -> &'static [Self] {
+        static values: &'static [Method] = &[
+            Method::GET,
+            Method::HEAD,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::CONNECT,
+            Method::OPTIONS,
+            Method::TRACE,
+            Method::PATCH,
+            Method::ONEWAY,
+        ];
+        values
+    }
+
+    fn enum_descriptor_static() -> &'static ::protobuf::reflect::EnumDescriptor {
+        static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::EnumDescriptor> = ::protobuf::rt::LazyV2::INIT;
+        descriptor.get(|| {
+            ::protobuf::reflect::EnumDescriptor::new_pb_name::<Method>("Method", file_descriptor_proto())
+        })
+    }
+}
+
+impl ::std::marker::Copy for Method {
+}
+
+impl ::std::default::Default for Method {
+    fn default() -> Self {
+        Method::GET
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for Method {
+    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
+        ::protobuf::reflect::ReflectValueRef::Enum(::protobuf::ProtobufEnum::descriptor(self))
+    }
+}
+
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\rmessage.proto\"\xca\x01\n\x07Request\x12\x14\n\x05seqid\x18\x01\x20\
-    \x01(\x05R\x05seqid\x12\x16\n\x06oneway\x18\x02\x20\x01(\x08R\x06oneway\
-    \x12\x10\n\x03uri\x18\x03\x20\x01(\tR\x03uri\x12/\n\x07headers\x18\x04\
-    \x20\x03(\x0b2\x15.Request.HeadersEntryR\x07headers\x12\x12\n\x04body\
-    \x18\x05\x20\x01(\x0cR\x04body\x1a:\n\x0cHeadersEntry\x12\x10\n\x03key\
-    \x18\x01\x20\x01(\tR\x03key\x12\x14\n\x05value\x18\x02\x20\x01(\tR\x05va\
-    lue:\x028\x01\"\xba\x01\n\x08Response\x12\x14\n\x05seqid\x18\x01\x20\x01\
-    (\x05R\x05seqid\x12\x16\n\x06status\x18\x02\x20\x01(\x05R\x06status\x120\
-    \n\x07headers\x18\x03\x20\x03(\x0b2\x16.Response.HeadersEntryR\x07header\
-    s\x12\x12\n\x04body\x18\x04\x20\x01(\x0cR\x04body\x1a:\n\x0cHeadersEntry\
-    \x12\x10\n\x03key\x18\x01\x20\x01(\tR\x03key\x12\x14\n\x05value\x18\x02\
-    \x20\x01(\tR\x05value:\x028\x01b\x06proto3\
+    \n\rmessage.proto\"\xd3\x01\n\x07Request\x12\x14\n\x05seqid\x18\x01\x20\
+    \x01(\x05R\x05seqid\x12\x1f\n\x06method\x18\x02\x20\x01(\x0e2\x07.Method\
+    R\x06method\x12\x10\n\x03uri\x18\x03\x20\x01(\tR\x03uri\x12/\n\x07header\
+    s\x18\x04\x20\x03(\x0b2\x15.Request.HeadersEntryR\x07headers\x12\x12\n\
+    \x04body\x18\x05\x20\x01(\x0cR\x04body\x1a:\n\x0cHeadersEntry\x12\x10\n\
+    \x03key\x18\x01\x20\x01(\tR\x03key\x12\x14\n\x05value\x18\x02\x20\x01(\t\
+    R\x05value:\x028\x01\"\xba\x01\n\x08Response\x12\x14\n\x05seqid\x18\x01\
+    \x20\x01(\x05R\x05seqid\x12\x16\n\x06status\x18\x02\x20\x01(\x05R\x06sta\
+    tus\x120\n\x07headers\x18\x03\x20\x03(\x0b2\x16.Response.HeadersEntryR\
+    \x07headers\x12\x12\n\x04body\x18\x04\x20\x01(\x0cR\x04body\x1a:\n\x0cHe\
+    adersEntry\x12\x10\n\x03key\x18\x01\x20\x01(\tR\x03key\x12\x14\n\x05valu\
+    e\x18\x02\x20\x01(\tR\x05value:\x028\x01*v\n\x06Method\x12\x07\n\x03GET\
+    \x10\0\x12\x08\n\x04HEAD\x10\x01\x12\x08\n\x04POST\x10\x02\x12\x07\n\x03\
+    PUT\x10\x03\x12\n\n\x06DELETE\x10\x04\x12\x0b\n\x07CONNECT\x10\x05\x12\
+    \x0b\n\x07OPTIONS\x10\x06\x12\t\n\x05TRACE\x10\x07\x12\t\n\x05PATCH\x10\
+    \x08\x12\n\n\x06ONEWAY\x10\tb\x06proto3\
 ";
 
 static file_descriptor_proto_lazy: ::protobuf::rt::LazyV2<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::rt::LazyV2::INIT;
