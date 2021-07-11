@@ -1,53 +1,32 @@
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::ops::Deref;
 
-use hyper::{Body, Client, Request, Response, Result};
-use hyper::client::{Builder, HttpConnector};
-use hyper::client::connect::dns::GaiResolver;
-use lazy_static::lazy_static;
-
-lazy_static! { static ref CLIENT: Client<HttpConnector<GaiResolver>, Body> = Builder::default().build_http();}
-
+use attohttpc::{Response, Result};
+use attohttpc::header::HeaderName;
 
 pub(crate) fn do_request(req: wasp::Request) -> Result<wasp::Response> {
     println!("got req = {:?}", req);
-    let cli = CLIENT.clone();
-    tokio::runtime::Builder::new_current_thread()
-        .enable_io()
-        .build()
-        .unwrap()
-        .block_on(async {
-            let req = to_http_request(req);
-            let resp = to_response(cli.request(req).await.unwrap()).await;
-            println!("got resp = {:?}", resp);
-            resp
-        })
+    let mut builder = attohttpc::RequestBuilder::new(Method(req.method).try_into().unwrap(), req.uri);
+    for x in req.headers {
+        builder = builder.header(HeaderName::try_from(&x.0).unwrap(), x.1);
+    }
+    let resp = builder.bytes(req.body)
+                      .send().unwrap();
+    let resp = to_response(resp);
+    println!("got resp = {:?}", resp);
+    resp
 }
 
-async fn to_response(mut resp: Response<Body>) -> Result<wasp::Response> {
+fn to_response(resp: Response) -> Result<wasp::Response> {
     let mut r = wasp::Response::new();
     r.set_status(resp.status().as_u16() as i32);
-    r.set_headers(resp.headers().iter().map(|kv| {
-        (kv.0.to_string(), kv.1.to_str().unwrap().to_string())
-    }).collect());
-    let body = hyper::body::to_bytes(resp.body_mut()).await?;
-    r.set_body(body);
+    r.set_headers(resp.headers().iter().map(|kv| (kv.0.to_string(), kv.1.to_str().unwrap().to_string())).collect());
+    r.set_body(resp.bytes().unwrap().into());
     Ok(r)
 }
 
-fn to_http_request(req: wasp::Request) -> Request<Body> {
-    let mut builder = Request::builder()
-        .method(Method(req.method))
-        .uri(req.uri);
-    for x in req.headers {
-        builder = builder.header(x.0.as_str(), x.1.as_str());
-    }
-    builder.body(Body::from(req.body)).unwrap()
-}
-
-
-pub(crate) fn to_http_response(mut msg: wasp::Response) -> Response<Body> {
-    let mut resp = Response::builder();
+pub(crate) fn to_http_response(mut msg: wasp::Response) -> hyper::Response<hyper::Body> {
+    let mut resp = hyper::Response::builder();
     for x in msg.headers.iter() {
         resp = resp.header(x.0, x.1);
     }
@@ -55,13 +34,13 @@ pub(crate) fn to_http_response(mut msg: wasp::Response) -> Response<Body> {
         msg.status = 200
     }
     resp = resp.status(msg.status as u16);
-    resp.body(Body::from(msg.body)).unwrap()
+    resp.body(hyper::Body::from(msg.body)).unwrap()
 }
 
-pub(crate) async fn to_request(req: Request<Body>) -> wasp::Request {
+pub(crate) async fn to_request(req: hyper::Request<hyper::Body>) -> wasp::Request {
     let mut msg = wasp::Request::new();
     msg.set_uri(req.uri().to_string());
-    msg.set_method(Method::from(req.method()).into());
+    msg.set_method(Method::from(req.method().clone()).into());
     let (parts, body) = req.into_parts();
     let body = hyper::body::to_bytes(body).await.map_or_else(|_| wasp::Bytes::new(), |v| v);
     for x in parts.headers.iter() {
@@ -112,9 +91,9 @@ impl TryFrom<Method> for hyper::Method {
     }
 }
 
-impl From<&hyper::Method> for Method {
-    fn from(method: &hyper::Method) -> Self {
-        Method(match method.clone() {
+impl From<hyper::Method> for Method {
+    fn from(method: hyper::Method) -> Self {
+        Method(match method {
             hyper::Method::GET => { wasp::Method::GET }
             hyper::Method::HEAD => { wasp::Method::HEAD }
             hyper::Method::POST => { wasp::Method::POST }

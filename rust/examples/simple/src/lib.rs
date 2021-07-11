@@ -19,12 +19,12 @@ fn handler(ctx_id: i64, req: Request) -> Option<Response> {
         return None;
     }
     #[cfg(debug_assertions)] {
-        // let mut req2 = Request::new();
-        // req2.set_method(Method::GET);
-        // req2.set_uri(String::from("https://github.com/henrylee2cn/wasp"));
-        // println!("[WASI-Simple] Request2: {:?}", req);
-        // let resp2 = do_request(ctx_id, req2).unwrap();
-        // println!("[WASI-Simple] Response2: {:?}", resp2);
+        let mut req2 = Request::new();
+        req2.set_method(Method::GET);
+        req2.set_uri(String::from("https://github.com/henrylee2cn/wasp"));
+        println!("[WASI-Simple] Request2: {:?}", req);
+        let resp2 = do_request(ctx_id, req2).unwrap();
+        println!("[WASI-Simple] Response2: {:?}", resp2);
     }
 
     let mut resp = Response::new();
