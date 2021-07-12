@@ -5,11 +5,13 @@ use wapm_cli::commands;
 #[cfg(feature = "update-notifications")]
 use wapm_cli::update_notifier;
 
-use crate::server::{serve, ServeOpt};
+use crate::proto::ServeOpt;
+use crate::transport::serve;
 
-mod server;
 mod instance;
-mod client;
+mod transport;
+mod http;
+mod proto;
 
 #[derive(StructOpt, Debug)]
 #[structopt(global_settings = & [AppSettings::VersionlessSubcommands, AppSettings::ColorAuto, AppSettings::ColoredHelp])]

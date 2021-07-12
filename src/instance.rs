@@ -11,7 +11,7 @@ use wasmer_engine_universal::Universal;
 use wasmer_wasi::{WasiEnv, WasiState};
 use wasp::*;
 
-use crate::server::ServeOpt;
+use crate::proto::{ServeOpt, write_to_vec};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Instance {
@@ -138,7 +138,7 @@ impl Instance {
                 ins.use_mut_buffer(ctx_id, size as usize, |buffer|{
                     ins.read_view_bytes(offset as usize, size as usize, buffer);
                     let req = Request::parse_from_bytes(buffer.as_slice()).unwrap();
-                    let resp = crate::client::do_request(req).unwrap();
+                    let resp = crate::transport::do_request(req).unwrap();
                     write_to_vec(resp,buffer)
                 }) as i32
             }),
@@ -257,18 +257,6 @@ fn current_thread_id() -> usize {
         .join("")
         .parse().unwrap();
     return thread_id;
-}
-
-pub(crate) fn write_to_vec<M: Message>(msg: M, buffer: &mut Vec<u8>) -> usize {
-    let size = msg.compute_size() as usize;
-    if size > buffer.capacity() {
-        buffer.resize(size, 0);
-    }
-    unsafe { buffer.set_len(size) };
-    let mut os = CodedOutputStream::bytes(buffer);
-    msg.write_to_with_cached_sizes(&mut os)
-       .or_else(|e| Err(format!("{}", e))).unwrap();
-    buffer.len()
 }
 
 fn recall_data_from_buffer(ctx_id: i64, offset: i32) {
