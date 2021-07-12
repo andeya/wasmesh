@@ -1,6 +1,5 @@
 use std::ffi::OsString;
 use std::net::{AddrParseError, SocketAddr, SocketAddrV4, SocketAddrV6};
-use std::ops::Deref;
 
 use structopt::StructOpt;
 use wasp::*;
@@ -53,23 +52,6 @@ impl ServeOpt {
         return 1;
     }
 }
-
-struct Method(wasp::Method);
-
-impl Deref for Method {
-    type Target = wasp::Method;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Into<wasp::Method> for Method {
-    fn into(self) -> wasp::Method {
-        self.0
-    }
-}
-
 
 pub(crate) fn write_to_vec<M: Message>(msg: M, buffer: &mut Vec<u8>) -> usize {
     let size = msg.compute_size() as usize;
