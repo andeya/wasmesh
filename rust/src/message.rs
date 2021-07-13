@@ -601,6 +601,63 @@ impl ::protobuf::reflect::ProtobufValue for Response {
 
 #[derive(Clone,PartialEq,Eq,Debug,Hash)]
 #[cfg_attr(feature = "with-serde", derive(::serde::Serialize, ::serde::Deserialize))]
+pub enum Scheme {
+    HTTP = 0,
+    HTTPS = 1,
+    RPC = 2,
+    WNS = 3,
+}
+
+impl ::protobuf::ProtobufEnum for Scheme {
+    fn value(&self) -> i32 {
+        *self as i32
+    }
+
+    fn from_i32(value: i32) -> ::std::option::Option<Scheme> {
+        match value {
+            0 => ::std::option::Option::Some(Scheme::HTTP),
+            1 => ::std::option::Option::Some(Scheme::HTTPS),
+            2 => ::std::option::Option::Some(Scheme::RPC),
+            3 => ::std::option::Option::Some(Scheme::WNS),
+            _ => ::std::option::Option::None
+        }
+    }
+
+    fn values() -> &'static [Self] {
+        static values: &'static [Scheme] = &[
+            Scheme::HTTP,
+            Scheme::HTTPS,
+            Scheme::RPC,
+            Scheme::WNS,
+        ];
+        values
+    }
+
+    fn enum_descriptor_static() -> &'static ::protobuf::reflect::EnumDescriptor {
+        static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::EnumDescriptor> = ::protobuf::rt::LazyV2::INIT;
+        descriptor.get(|| {
+            ::protobuf::reflect::EnumDescriptor::new_pb_name::<Scheme>("Scheme", file_descriptor_proto())
+        })
+    }
+}
+
+impl ::std::marker::Copy for Scheme {
+}
+
+impl ::std::default::Default for Scheme {
+    fn default() -> Self {
+        Scheme::HTTP
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for Scheme {
+    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
+        ::protobuf::reflect::ReflectValueRef::Enum(::protobuf::ProtobufEnum::descriptor(self))
+    }
+}
+
+#[derive(Clone,PartialEq,Eq,Debug,Hash)]
+#[cfg_attr(feature = "with-serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum Method {
     GET = 0,
     HEAD = 1,
@@ -686,11 +743,13 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     tus\x120\n\x07headers\x18\x03\x20\x03(\x0b2\x16.Response.HeadersEntryR\
     \x07headers\x12\x12\n\x04body\x18\x04\x20\x01(\x0cR\x04body\x1a:\n\x0cHe\
     adersEntry\x12\x10\n\x03key\x18\x01\x20\x01(\tR\x03key\x12\x14\n\x05valu\
-    e\x18\x02\x20\x01(\tR\x05value:\x028\x01*v\n\x06Method\x12\x07\n\x03GET\
-    \x10\0\x12\x08\n\x04HEAD\x10\x01\x12\x08\n\x04POST\x10\x02\x12\x07\n\x03\
-    PUT\x10\x03\x12\n\n\x06DELETE\x10\x04\x12\x0b\n\x07CONNECT\x10\x05\x12\
-    \x0b\n\x07OPTIONS\x10\x06\x12\t\n\x05TRACE\x10\x07\x12\t\n\x05PATCH\x10\
-    \x08\x12\n\n\x06ONEWAY\x10\tb\x06proto3\
+    e\x18\x02\x20\x01(\tR\x05value:\x028\x01*/\n\x06Scheme\x12\x08\n\x04HTTP\
+    \x10\0\x12\t\n\x05HTTPS\x10\x01\x12\x07\n\x03RPC\x10\x02\x12\x07\n\x03WN\
+    S\x10\x03*v\n\x06Method\x12\x07\n\x03GET\x10\0\x12\x08\n\x04HEAD\x10\x01\
+    \x12\x08\n\x04POST\x10\x02\x12\x07\n\x03PUT\x10\x03\x12\n\n\x06DELETE\
+    \x10\x04\x12\x0b\n\x07CONNECT\x10\x05\x12\x0b\n\x07OPTIONS\x10\x06\x12\t\
+    \n\x05TRACE\x10\x07\x12\t\n\x05PATCH\x10\x08\x12\n\n\x06ONEWAY\x10\tb\
+    \x06proto3\
 ";
 
 static file_descriptor_proto_lazy: ::protobuf::rt::LazyV2<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::rt::LazyV2::INIT;

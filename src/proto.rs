@@ -6,8 +6,14 @@ use wasp::*;
 
 #[derive(StructOpt, Debug, Clone)]
 pub struct ServeOpt {
-    pub(crate) addr: String,
+    /// wasm server file path
     pub(crate) command: String,
+    /// HTTP listening address
+    #[structopt(long, default_value = "0.0.0.0:9090")]
+    pub(crate) http: String,
+    /// RPC listening address
+    #[structopt(long, default_value = "0.0.0.0:9420")]
+    pub(crate) rpc: String,
     /// worker threads, default to lazy auto-detection (one thread per CPU core)
     #[structopt(long, default_value = "0")]
     pub(crate) threads: usize,
@@ -19,15 +25,20 @@ pub struct ServeOpt {
     pub(crate) args: Vec<OsString>,
 }
 
+#[allow(dead_code)]
 impl ServeOpt {
-    pub(crate) fn parse_addr(&self) -> Result<SocketAddr, AddrParseError> {
-        let mut addr = self.addr.parse::<SocketAddrV4>()
-                           .and_then(|a| Ok(SocketAddr::V4(a)));
-        if addr.is_err() {
-            addr = self.addr.parse::<SocketAddrV6>()
-                       .and_then(|a| Ok(SocketAddr::V6(a)));
-        }
-        addr
+    pub(crate) fn parse_http_addr(&self) -> Result<SocketAddr, AddrParseError> {
+        Self::parse_addr(&self.http)
+    }
+    pub(crate) fn parse_rpc_addr(&self) -> Result<SocketAddr, AddrParseError> {
+        Self::parse_addr(&self.rpc)
+    }
+    fn parse_addr(addr_str: &String) -> Result<SocketAddr, AddrParseError> {
+        addr_str.parse::<SocketAddrV4>()
+                .and_then(|a| Ok(SocketAddr::V4(a))).or_else(|_| {
+            addr_str.parse::<SocketAddrV6>()
+                    .and_then(|a| Ok(SocketAddr::V6(a)))
+        })
     }
     pub(crate) fn get_name(&self) -> &String {
         &self.command

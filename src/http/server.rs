@@ -7,7 +7,7 @@ use crate::instance::local_instance_ref;
 use crate::proto::{ServeOpt, write_to_vec};
 
 pub(crate) async fn serve(serve_options: ServeOpt) -> anyhow::Result<()> {
-    let addr = serve_options.parse_addr()?;
+    let addr = serve_options.parse_http_addr()?;
     // The closure inside `make_service_fn` is run for each connection,
     // creating a 'service' to handle requests for that specific connection.
     let make_service = make_service_fn(|socket: &AddrStream| {

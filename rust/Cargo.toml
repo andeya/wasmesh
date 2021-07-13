@@ -13,6 +13,7 @@ serde_repr = "0.1"
 wasp-macros = { path = "wasp-macros" }
 protobuf = { version = "2", features = ["with-bytes"] }
 bytes = { version = "1", features = ["serde"] }
+anyhow = "1"
 
 [features]
 default = ["with-serde"]

@@ -39,7 +39,7 @@ cargo run-simple-release
 - Directly use the command line:
 
 ```shell
-wasp serve --threads=16 127.0.0.1:9090 rust/examples/simple/target/wasm32-wasi/release/simple.wasm
+wasp serve --threads=16 --http=127.0.0.1:9090 rust/examples/simple/target/wasm32-wasi/release/simple.wasm
 ```
 
 ## Benchmark
