@@ -14,6 +14,7 @@ wasp-macros = { path = "wasp-macros" }
 protobuf = { version = "2", features = ["with-bytes"] }
 bytes = { version = "1", features = ["serde"] }
 anyhow = "1"
+http = "0.2.4"
 
 [features]
 default = ["with-serde"]

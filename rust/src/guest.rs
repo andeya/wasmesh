@@ -29,17 +29,22 @@ pub fn handle_request<F>(ctx_id: i64, size: i32, handler: F)
                 })
         }
     };
+    let is_oneway = req.method == Method::ONEWAY;
     let resp = handler(ctx_id, req);
     if let Some(resp) = resp {
         let size = resp.compute_size() as usize;
         if size > buffer.capacity() {
             buffer.resize(size, 0);
+        } else {
+            unsafe { buffer.set_len(size) };
         }
-        unsafe { buffer.set_len(size) };
         let mut os = CodedOutputStream::bytes(&mut buffer);
         resp.write_to_with_cached_sizes(&mut os)
             .or_else(|e| Err(format!("{}", e))).unwrap();
+        os.flush().unwrap();
         unsafe { _wasp_send_response(ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
+    } else if !is_oneway {
+        unsafe { _wasp_send_response(ctx_id, 0i32, 0 as i32) };
     }
 }
 

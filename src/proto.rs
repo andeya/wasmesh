@@ -9,11 +9,13 @@ pub struct ServeOpt {
     /// wasm server file path
     pub(crate) command: String,
     /// HTTP listening address
-    #[structopt(long, default_value = "0.0.0.0:9090")]
-    pub(crate) http: String,
+    // #[structopt(long, default_value = "0.0.0.0:9090")]
+    #[structopt(long)]
+    pub(crate) http: Option<String>,
     /// RPC listening address
-    #[structopt(long, default_value = "0.0.0.0:9420")]
-    pub(crate) rpc: String,
+    // #[structopt(long, default_value = "0.0.0.0:9420")]
+    #[structopt(long)]
+    pub(crate) rpc: Option<String>,
     /// worker threads, default to lazy auto-detection (one thread per CPU core)
     #[structopt(long, default_value = "0")]
     pub(crate) threads: usize,
@@ -27,18 +29,22 @@ pub struct ServeOpt {
 
 #[allow(dead_code)]
 impl ServeOpt {
-    pub(crate) fn parse_http_addr(&self) -> Result<SocketAddr, AddrParseError> {
-        Self::parse_addr(&self.http)
+    pub(crate) fn parse_http_addr(&self) -> Result<Option<SocketAddr>, AddrParseError> {
+        Self::parse_addr(self.http.as_ref())
     }
-    pub(crate) fn parse_rpc_addr(&self) -> Result<SocketAddr, AddrParseError> {
-        Self::parse_addr(&self.rpc)
+    pub(crate) fn parse_rpc_addr(&self) -> Result<Option<SocketAddr>, AddrParseError> {
+        Self::parse_addr(self.rpc.as_ref())
     }
-    fn parse_addr(addr_str: &String) -> Result<SocketAddr, AddrParseError> {
-        addr_str.parse::<SocketAddrV4>()
-                .and_then(|a| Ok(SocketAddr::V4(a))).or_else(|_| {
+    fn parse_addr(addr: Option<&String>) -> Result<Option<SocketAddr>, AddrParseError> {
+        if addr.is_none() {
+            return Ok(None)
+        }
+        let addr_str: &String = addr.unwrap();
+        Ok(Some(addr_str.parse::<SocketAddrV4>()
+                        .and_then(|a| Ok(SocketAddr::V4(a))).or_else(|_| {
             addr_str.parse::<SocketAddrV6>()
                     .and_then(|a| Ok(SocketAddr::V6(a)))
-        })
+        })?))
     }
     pub(crate) fn get_name(&self) -> &String {
         &self.command
@@ -64,14 +70,24 @@ impl ServeOpt {
     }
 }
 
-pub(crate) fn write_to_vec<M: Message>(msg: M, buffer: &mut Vec<u8>) -> usize {
+pub(crate) fn write_to_vec<M: Message>(msg: &M, buffer: &mut Vec<u8>) -> usize {
     let size = msg.compute_size() as usize;
-    if size > buffer.capacity() {
-        buffer.resize(size, 0);
-    }
-    unsafe { buffer.set_len(size) };
+    resize_with_capacity(buffer, size);
+    write_to_with_cached_sizes(msg, buffer)
+}
+
+pub(crate) fn write_to_with_cached_sizes<M: Message>(msg: &M, buffer: &mut Vec<u8>) -> usize {
     let mut os = CodedOutputStream::bytes(buffer);
     msg.write_to_with_cached_sizes(&mut os)
        .or_else(|e| Err(format!("{}", e))).unwrap();
+    // os.flush().unwrap();
     buffer.len()
+}
+
+pub(crate) fn resize_with_capacity(buffer: &mut Vec<u8>, new_size: usize) {
+    if new_size > buffer.capacity() {
+        buffer.resize(new_size, 0);
+    } else {
+        unsafe { buffer.set_len(new_size) };
+    }
 }

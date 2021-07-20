@@ -1,17 +1,21 @@
+use std::net::SocketAddr;
+
 use hyper::{Body, Error, Request as HttpRequest, Response as HttpResponse};
 use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use wasp::*;
 
 use crate::instance::local_instance_ref;
-use crate::proto::{ServeOpt, write_to_vec};
+use crate::proto::write_to_with_cached_sizes;
 
-pub(crate) async fn serve(serve_options: ServeOpt) -> anyhow::Result<()> {
-    let addr = serve_options.parse_http_addr()?;
+pub(crate) async fn serve(addr: SocketAddr) -> anyhow::Result<()> {
     // The closure inside `make_service_fn` is run for each connection,
     // creating a 'service' to handle requests for that specific connection.
-    let make_service = make_service_fn(|socket: &AddrStream| {
-        let _remote_addr = socket.remote_addr();
+    let make_service = make_service_fn(|_socket: &AddrStream| {
+        #[cfg(debug_assertions)] {
+            let remote_addr = _socket.remote_addr();
+            println!("HTTP remote_addr = {:?}", remote_addr.to_string());
+        }
         async {
             // This is the `Service` that will handle the connection.
             // `service_fn` is a helper to convert a function that
@@ -46,15 +50,18 @@ async fn handle(req: HttpRequest<Body>) -> Result<HttpResponse<Body>, String> {
     #[cfg(debug_assertions)]
     println!("thread_id:{}, ctx_id:{}", thread_id, ctx_id);
     let buffer_len = ins.use_mut_buffer(ctx_id, req.compute_size() as usize, |buffer| {
-        write_to_vec(req, buffer)
+        write_to_with_cached_sizes(&req, buffer)
     });
 
     ins.call_guest_handler(ctx_id, buffer_len as i32);
     // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
 
     let buffer = ins.take_buffer(ctx_id).unwrap_or(vec![]);
-    let resp = Response::parse_from_bytes(buffer.as_slice()).unwrap();
-
+    let resp = if buffer.len() > 0 {
+        Response::parse_from_bytes(buffer.as_slice()).unwrap()
+    } else {
+        Response::new()
+    };
     ins.try_reuse_buffer(thread_id, buffer);
     // println!("========= resp={:?}", resp);
     Ok(to_http_response(resp))

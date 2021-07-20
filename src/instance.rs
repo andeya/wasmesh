@@ -9,9 +9,8 @@ use wasmer_compiler_cranelift::Cranelift;
 use wasmer_compiler_llvm::LLVM;
 use wasmer_engine_universal::Universal;
 use wasmer_wasi::{WasiEnv, WasiState};
-use wasp::*;
 
-use crate::proto::{ServeOpt, write_to_vec};
+use crate::proto::{resize_with_capacity, ServeOpt};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Instance {
@@ -135,11 +134,9 @@ impl Instance {
                 #[cfg(debug_assertions)]
                 println!("_wasp_send_request: thread_id:{}, ctx_id:{}, offset:{}, size:{}", thread_id, ctx_id, offset, size);
                 let ins = instance_ref(thread_id as usize);
-                ins.use_mut_buffer(ctx_id, size as usize, |buffer|{
+                ins.use_mut_buffer(ctx_id, size as usize, |mut buffer|{
                     ins.read_view_bytes(offset as usize, size as usize, buffer);
-                    let req = Request::parse_from_bytes(buffer.as_slice()).unwrap();
-                    let resp = crate::transport::do_request(req).unwrap();
-                    write_to_vec(resp,buffer)
+                    crate::transport::do_request(&mut buffer).unwrap()
                 }) as i32
             }),
             "_wasp_recall_response" => Function::new_native(store, |ctx_id: i64, offset: i32| {
@@ -150,15 +147,15 @@ impl Instance {
     fn init(self) -> Self {
         self
     }
-    // fn cache_message_data(&self, ctx_id: i64, data: Vec<u8>) {
-    //     self.message_cache.borrow_mut().insert(ctx_id, data);
-    // }
     pub(crate) fn use_mut_buffer<F: FnOnce(&mut Vec<u8>) -> usize>(&self, ctx_id: i64, size: usize, call: F) -> usize {
         let mut cache = self.message_cache.borrow_mut();
         if let Some(buffer) = cache.get_mut(&ctx_id) {
+            if size > 0 {
+                resize_with_capacity(buffer, size);
+            }
             return call(buffer);
         }
-        cache.insert(ctx_id, Vec::with_capacity(size));
+        cache.insert(ctx_id, vec![0; size]);
         call(cache.get_mut(&ctx_id).unwrap())
     }
     pub(crate) fn take_buffer(&self, ctx_id: i64) -> Option<Vec<u8>> {
@@ -204,11 +201,11 @@ impl Instance {
     }
     fn read_view_bytes(&self, offset: usize, size: usize, buffer: &mut Vec<u8>) {
         // println!("read_view_bytes: offset:{}, size:{}", offset, size);
-        let view = self.get_view();
-        if size > buffer.capacity() {
-            buffer.resize(size, 0);
+        if size == 0 {
+            resize_with_capacity(buffer, size);
+            return;
         }
-        unsafe { buffer.set_len(size) };
+        let view = self.get_view();
         for x in view[offset..(offset + size)]
             .iter()
             .map(|c| c.get()).enumerate() {
@@ -266,6 +263,8 @@ fn recall_data_from_buffer(ctx_id: i64, offset: i32) {
     let ins = instance_ref(thread_id);
     let _ = ins.use_mut_buffer(ctx_id, 0, |data| {
         ins.set_view_bytes(offset as usize, data.iter());
-        data.len()
+        let len = data.len();
+        unsafe { data.set_len(0) };
+        len
     });
 }

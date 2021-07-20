@@ -12,6 +12,8 @@ mod instance;
 mod transport;
 mod http;
 mod proto;
+mod ns;
+mod rpc;
 
 #[derive(StructOpt, Debug)]
 #[structopt(global_settings = & [AppSettings::VersionlessSubcommands, AppSettings::ColorAuto, AppSettings::ColoredHelp])]
