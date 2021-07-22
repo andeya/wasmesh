@@ -5,6 +5,7 @@ authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
 edition = "2018"
 resolver = "2"
 build = "build.rs"
+default-run = "wasp"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -35,4 +36,8 @@ llvm = ["wasmer-compiler-llvm"]
 
 [[bin]]
 name = "wasp"
-path = "./src/main.rs"
+path = "src/bin/wasp.rs"
+
+[[bin]]
+name = "wasp-bench"
+path = "src/bin/bench.rs"

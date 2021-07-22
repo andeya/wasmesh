@@ -1,3 +1,5 @@
+//! wasp cli
+
 use std::{env, path};
 
 use structopt::{clap::AppSettings, StructOpt};
@@ -5,15 +7,8 @@ use wapm_cli::commands;
 #[cfg(feature = "update-notifications")]
 use wapm_cli::update_notifier;
 
-use crate::proto::ServeOpt;
-use crate::transport::serve;
-
-mod instance;
-mod transport;
-mod http;
-mod proto;
-mod ns;
-mod rpc;
+use wasp_cli::serve;
+use wasp_cli::ServeOpt;
 
 #[derive(StructOpt, Debug)]
 #[structopt(global_settings = & [AppSettings::VersionlessSubcommands, AppSettings::ColorAuto, AppSettings::ColoredHelp])]

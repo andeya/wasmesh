@@ -136,7 +136,7 @@ impl Instance {
                 let ins = instance_ref(thread_id as usize);
                 ins.use_mut_buffer(ctx_id, size as usize, |mut buffer|{
                     ins.read_view_bytes(offset as usize, size as usize, buffer);
-                    crate::transport::do_request(&mut buffer).unwrap()
+                    crate::transport::do_request_from_vec(&mut buffer).unwrap()
                 }) as i32
             }),
             "_wasp_recall_response" => Function::new_native(store, |ctx_id: i64, offset: i32| {

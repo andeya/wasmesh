@@ -5,7 +5,7 @@ use std::pin::Pin;
 use wasp::*;
 
 use crate::instance;
-use crate::proto::ServeOpt;
+use crate::proto::{ServeOpt, write_to_vec};
 
 trait Transport {
     fn serve(addr: SocketAddr) -> Pin<Box<dyn Future<Output=anyhow::Result<()>>>>;
@@ -37,7 +37,7 @@ impl Transport for RpcTransport {
     }
 }
 
-pub(crate) fn serve(serve_options: ServeOpt) -> anyhow::Result<()> {
+pub fn serve(serve_options: ServeOpt) -> anyhow::Result<()> {
     let mut builder = tokio::runtime::Builder::new_multi_thread();
     builder.worker_threads(serve_options.get_worker_threads());
     builder.enable_all()
@@ -69,8 +69,14 @@ pub(crate) fn serve(serve_options: ServeOpt) -> anyhow::Result<()> {
            })
 }
 
-pub(crate) fn do_request(buffer: &mut Vec<u8>) -> anyhow::Result<usize> {
+#[inline]
+pub(crate) fn do_request_from_vec(buffer: &mut Vec<u8>) -> anyhow::Result<usize> {
     let req = wasp::Request::parse_from_bytes(buffer)?;
+    do_request(req, buffer)
+}
+
+#[inline]
+fn do_request(req: Request, buffer: &mut Vec<u8>) -> anyhow::Result<usize> {
     let _resp = match req.get_scheme()? {
         Scheme::HTTP | Scheme::HTTPS => {
             HttpTransport::do_request(req, buffer)
@@ -79,4 +85,11 @@ pub(crate) fn do_request(buffer: &mut Vec<u8>) -> anyhow::Result<usize> {
         Scheme::WNS => unimplemented!(),
     };
     Ok(buffer.len())
+}
+
+#[inline]
+pub fn request(req: Request) -> anyhow::Result<usize> {
+    let mut buffer = Vec::new();
+    let _size = write_to_vec(&req, &mut buffer);
+    do_request(req, &mut buffer)
 }
