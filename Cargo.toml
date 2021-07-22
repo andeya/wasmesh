@@ -40,4 +40,4 @@ path = "src/bin/wasp.rs"
 
 [[bin]]
 name = "wasp-bench"
-path = "src/bin/bench.rs"
+path = "src/bin/wasp-bench.rs"

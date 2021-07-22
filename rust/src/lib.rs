@@ -23,6 +23,12 @@ impl Display for Scheme {
     }
 }
 
+impl From<&uri::Scheme> for Scheme {
+    fn from(scheme: &uri::Scheme) -> Self {
+        scheme.as_str().try_into().unwrap()
+    }
+}
+
 impl TryFrom<&str> for Scheme {
     type Error = anyhow::Error;
 

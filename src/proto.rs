@@ -13,7 +13,7 @@ pub struct ServeOpt {
     #[structopt(long)]
     pub(crate) http: Option<String>,
     /// RPC listening address
-    // #[structopt(long, default_value = "0.0.0.0:9420")]
+    // #[structopt(long, default_value = "0.0.0.0:9091")]
     #[structopt(long)]
     pub(crate) rpc: Option<String>,
     /// worker threads, default to lazy auto-detection (one thread per CPU core)

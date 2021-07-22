@@ -40,12 +40,16 @@ async fn process(mut stream: TcpStream) {
     loop {
         let len = reader.read_i32_le().await;
         if let Err(e) = len {
-            if let ErrorKind::UnexpectedEof = e.kind() {
-                tokio::task::yield_now().await;
-                continue
-            }
-            eprintln!("failed to read len(i32): {}", e);
-            return;
+            match e.kind() {
+                ErrorKind::UnexpectedEof | ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted => {
+                    tokio::task::yield_now().await;
+                    continue;
+                }
+                _ => {
+                    eprintln!("failed to read len(i32): {}", e);
+                    return;
+                }
+            };
         }
         let len = len.unwrap();
         #[cfg(debug_assertions)] {
