@@ -47,6 +47,7 @@ async fn process(mut stream: TcpStream) {
                 }
                 _ => {
                     eprintln!("failed to read len(i32): {}", e);
+                    let _ = stream.shutdown();
                     return;
                 }
             };
@@ -57,6 +58,7 @@ async fn process(mut stream: TcpStream) {
         }
         if len < 0 || len > MAX_PKG_LEN {
             eprintln!("length exceeds the limit of (0,128MB]: {:.3}MB", len as f64 / (1 << 20) as f64);
+            let _ = stream.shutdown();
             return;
         }
         resize_with_capacity(&mut req_vec, len as usize);
@@ -65,12 +67,12 @@ async fn process(mut stream: TcpStream) {
         }
         if let Err(e) = reader.read_exact(&mut req_vec).await {
             eprintln!("failed to read request: size={:.3}MB, error={}", len as f64 / (1 << 20) as f64, e);
+            let _ = stream.shutdown();
             return;
         }
         #[cfg(debug_assertions)] {
             println!("RPC handling...");
         }
-        // tokio::spawn(async move {
         match handle(&req_vec).await {
             Ok(resp_vec) => {
                 if let Err(e) = writer.write_i32_le(resp_vec.len() as i32).await {
