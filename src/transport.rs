@@ -9,7 +9,7 @@ use crate::proto::{ServeOpt, write_to_vec};
 
 trait Transport {
     fn serve(addr: SocketAddr) -> Pin<Box<dyn Future<Output=anyhow::Result<()>>>>;
-    fn do_request(req: Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<Response>;
+    fn do_request(req: Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<Option<Response>>;
 }
 
 struct HttpTransport();
@@ -19,11 +19,10 @@ impl Transport for HttpTransport {
         Box::pin(crate::http::serve(addr))
     }
 
-    fn do_request(req: Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<Response> {
-        crate::http::do_request(req, msg_vec)
+    fn do_request(req: Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<Option<Response>> {
+        crate::http::do_request(req, msg_vec).and_then(|r| Ok(Some(r)))
     }
 }
-
 
 struct RpcTransport();
 
@@ -32,7 +31,7 @@ impl Transport for RpcTransport {
         Box::pin(crate::rpc::serve(addr))
     }
 
-    fn do_request(req: Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<Response> {
+    fn do_request(req: Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<Option<Response>> {
         crate::rpc::do_request(req, msg_vec)
     }
 }

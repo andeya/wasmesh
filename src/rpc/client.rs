@@ -23,16 +23,21 @@ impl Client {
         }
         return Ok(tcp_streams.get_mut(&addr).unwrap())
     }
-    fn request<'a>(&mut self, addr: SocketAddr, _seqid: i32, msg_vec: &'a mut Vec<u8>) -> std::io::Result<&'a Vec<u8>> {
+    fn request(&mut self, addr: SocketAddr, _seqid: i32, method: Method, msg_vec: &mut Vec<u8>) -> std::io::Result<bool> {
         let tcp_stream = self.connect(addr)?;
-        if let Err(e) = Self::send(tcp_stream, msg_vec).and_then(|len_vec| {
-            #[cfg(debug_assertions)] { println!("send request pack len={}, wait response", msg_vec.len()); }
-            Self::recv(tcp_stream, msg_vec, len_vec)
-        }) {
+        Self::send(tcp_stream, msg_vec).and_then(|len_vec| {
+            if let Method::ONEWAY = method {
+                #[cfg(debug_assertions)] { println!("send request pack len={}, wait response", msg_vec.len()); }
+                Ok(false)
+            } else {
+                #[cfg(debug_assertions)] { println!("send request pack len={}, wait response", msg_vec.len()); }
+                Self::recv(tcp_stream, msg_vec, len_vec)?;
+                Ok(true)
+            }
+        }).or_else(|e| {
             self.tcp_streams.remove(&addr);
             return Err(e)
-        }
-        Ok(msg_vec)
+        })
     }
     // send request
     fn send(tcp_stream: &mut TcpStream, msg_vec: &mut Vec<u8>) -> std::io::Result<[u8; 4]> {
@@ -53,15 +58,17 @@ impl Client {
 
 thread_local!(static LOCAL_CLIENT: RefCell<Client> = RefCell::new(Client::new()));
 
-pub(crate) fn do_request(req: Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<Response> {
+pub(crate) fn do_request(req: Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<Option<Response>> {
     // request
     #[cfg(debug_assertions)] { println!("got req = {:?}", req); }
     let addr = req.parse_uri()?.authority().unwrap().to_string().parse()?;
 
     LOCAL_CLIENT.with(|client| {
-        let msg_vec = client.borrow_mut().request(addr, req.get_seqid(), msg_vec)?;
-        let resp = Response::parse_from_bytes(msg_vec)?;
-        #[cfg(debug_assertions)] { println!("got resp = {:?}", resp); }
-        Ok(resp)
+        let has_resp = client.borrow_mut().request(addr, req.get_seqid(), req.get_method(), msg_vec)?;
+        if has_resp {
+            let resp = Response::parse_from_bytes(msg_vec)?;
+            #[cfg(debug_assertions)] { println!("got resp = {:?}", resp); }
+            Ok(Some(resp))
+        } else { Ok(None) }
     })
 }
