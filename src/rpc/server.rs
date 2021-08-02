@@ -34,20 +34,26 @@ async fn process(mut stream: TcpStream) {
         let remote_addr = stream.peer_addr().unwrap();
         println!("RPC remote_addr = {:?}", remote_addr.to_string());
     }
-    let (mut reader, mut writer) = stream.split();
-    // let mut reader = BufReader::new(reader);
     let mut req_vec = vec![];
     loop {
-        let len = reader.read_i32_le().await;
+        if let Err(e) = stream.readable().await {
+            eprintln!("failed to read request, error={}", e);
+            let _ = stream.shutdown();
+            return;
+        }
+        let len = stream.read_i32_le().await;
         if let Err(e) = len {
             match e.kind() {
-                ErrorKind::UnexpectedEof | ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted => {
-                    tokio::task::yield_now().await;
+                ErrorKind::WouldBlock => {
                     continue;
                 }
-                _ => {
-                    eprintln!("failed to read len(i32): {}", e);
+                ErrorKind::UnexpectedEof | ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted => {
                     let _ = stream.shutdown();
+                    return;
+                }
+                _ => {
+                    let _ = stream.shutdown();
+                    eprintln!("failed to read len(i32): {}", e);
                     return;
                 }
             };
@@ -65,7 +71,7 @@ async fn process(mut stream: TcpStream) {
         #[cfg(debug_assertions)] {
             println!("receiving request payload, len={}...", req_vec.len());
         }
-        if let Err(e) = reader.read_exact(&mut req_vec).await {
+        if let Err(e) = stream.read_exact(&mut req_vec).await {
             eprintln!("failed to read request: size={:.3}MB, error={}", len as f64 / (1 << 20) as f64, e);
             let _ = stream.shutdown();
             return;
@@ -75,15 +81,15 @@ async fn process(mut stream: TcpStream) {
         }
         match handle(&req_vec).await {
             Ok(resp_vec) => {
-                if let Err(e) = writer.write_i32_le(resp_vec.len() as i32).await {
+                if let Err(e) = stream.write_i32_le(resp_vec.len() as i32).await {
                     eprintln!("failed to write response size, error={}", e);
                     return;
                 }
-                if let Err(e) = writer.write_all(resp_vec.as_slice()).await {
+                if let Err(e) = stream.write_all(resp_vec.as_slice()).await {
                     eprintln!("failed to write response payload, error={}", e);
                     return;
                 }
-                if let Err(e) = writer.flush().await {
+                if let Err(e) = stream.flush().await {
                     eprintln!("failed to flush response, error={}", e);
                     return;
                 }
