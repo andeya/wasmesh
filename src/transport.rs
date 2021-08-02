@@ -71,23 +71,28 @@ pub fn serve(serve_options: ServeOpt) -> anyhow::Result<()> {
 #[inline]
 pub(crate) fn do_request_from_vec(buffer: &mut Vec<u8>) -> anyhow::Result<usize> {
     let req = wasp::Request::parse_from_bytes(buffer)?;
-    do_request(req, buffer)
-}
-
-#[inline]
-fn do_request(req: Request, buffer: &mut Vec<u8>) -> anyhow::Result<usize> {
-    let _resp = match req.get_scheme()? {
-        Scheme::HTTP | Scheme::HTTPS => {
-            HttpTransport::do_request(req, buffer)
-        },
-        Scheme::RPC => RpcTransport::do_request(req, buffer),
-        Scheme::WNS => unimplemented!(),
-    };
+    let _ = do_request(req, buffer)?;
     Ok(buffer.len())
 }
 
 #[inline]
-pub fn request(req: Request) -> anyhow::Result<usize> {
+fn do_request(req: Request, buffer: &mut Vec<u8>) -> anyhow::Result<Option<Response>> {
+    match req.get_scheme()? {
+        Scheme::HTTP | Scheme::HTTPS => {
+            HttpTransport::do_request(req, buffer)
+        }
+        Scheme::RPC => RpcTransport::do_request(req, buffer),
+        Scheme::WNS => unimplemented!(),
+    }.and_then(|resp| {
+        if resp.is_none() {
+            unsafe { buffer.set_len(0); }
+        }
+        Ok(resp)
+    })
+}
+
+#[inline]
+pub fn request(req: Request) -> anyhow::Result<Option<Response>> {
     let mut buffer = Vec::new();
     let _size = write_to_vec(&req, &mut buffer);
     do_request(req, &mut buffer)

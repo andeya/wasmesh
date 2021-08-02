@@ -63,5 +63,8 @@ fn do_request(args: &BenchArgs) -> bool {
         .map_or_else(|e| {
             eprintln!("{}", e);
             false
-        }, |_| true)
+        }, |_resp| {
+            // println!("{:?}", resp);
+            true
+        })
 }
