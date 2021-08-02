@@ -23,22 +23,31 @@ impl Client {
         }
         return Ok(tcp_streams.get_mut(&addr).unwrap())
     }
-    fn send<'a>(&mut self, addr: SocketAddr, _seqid: i32, msg_vec: &'a mut Vec<u8>) -> std::io::Result<&'a Vec<u8>> {
+    fn request<'a>(&mut self, addr: SocketAddr, _seqid: i32, msg_vec: &'a mut Vec<u8>) -> std::io::Result<&'a Vec<u8>> {
         let tcp_stream = self.connect(addr)?;
-
-        // send request
-        let mut len_vec = (msg_vec.len() as i32).to_le_bytes();
+        if let Err(e) = Self::send(tcp_stream, msg_vec).and_then(|len_vec| {
+            #[cfg(debug_assertions)] { println!("send request pack len={}, wait response", msg_vec.len()); }
+            Self::recv(tcp_stream, msg_vec, len_vec)
+        }) {
+            self.tcp_streams.remove(&addr);
+            return Err(e)
+        }
+        Ok(msg_vec)
+    }
+    // send request
+    fn send(tcp_stream: &mut TcpStream, msg_vec: &mut Vec<u8>) -> std::io::Result<[u8; 4]> {
+        let len_vec = (msg_vec.len() as i32).to_le_bytes();
         tcp_stream.write_all(&len_vec)?;
         tcp_stream.write_all(&msg_vec)?;
         tcp_stream.flush()?;
-
-        #[cfg(debug_assertions)] { println!("send request pack len={}, wait response", msg_vec.len()); }
-
-        // receive response
+        Ok(len_vec)
+    }
+    // receive response
+    fn recv(tcp_stream: &mut TcpStream, msg_vec: &mut Vec<u8>, mut len_vec: [u8; 4]) -> std::io::Result<()> {
         tcp_stream.read_exact(&mut len_vec)?;
         resize_with_capacity(msg_vec, i32::from_le_bytes(len_vec) as usize);
         tcp_stream.read_exact(msg_vec)?;
-        Ok(msg_vec)
+        Ok(())
     }
 }
 
@@ -50,7 +59,7 @@ pub(crate) fn do_request(req: Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<
     let addr = req.parse_uri()?.authority().unwrap().to_string().parse()?;
 
     LOCAL_CLIENT.with(|client| {
-        let msg_vec = client.borrow_mut().send(addr, req.get_seqid(), msg_vec)?;
+        let msg_vec = client.borrow_mut().request(addr, req.get_seqid(), msg_vec)?;
         let resp = Response::parse_from_bytes(msg_vec)?;
         #[cfg(debug_assertions)] { println!("got resp = {:?}", resp); }
         Ok(resp)
