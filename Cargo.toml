@@ -2,7 +2,7 @@
 name = "wasp-cli"
 version = "0.1.0"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
-edition = "2018"
+edition = "2021"
 resolver = "2"
 build = "build.rs"
 default-run = "wasp"

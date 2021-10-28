@@ -52,25 +52,3 @@ impl Request {
         self.uri.as_str().parse::<Uri>().map_err(|e| anyhow::Error::new(e))
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use url::Url;
-
-    use crate::{Request, Scheme};
-
-    #[test]
-    fn scheme() {
-        assert_eq!("wns", Scheme::WNS.to_string());
-        let mut req = Request::new();
-        req.set_uri("/".to_string());
-        println!("{:?}", req.get_scheme());
-    }
-
-    #[test]
-    fn parse_uri() {
-        let uri = Url::parse("rpc://127.0.0.1:8080/a/b?c=0#d").unwrap();
-        assert_eq!("127.0.0.1", uri.host().unwrap().to_string());
-        assert_eq!(Some(8080u16), uri.port())
-    }
-}
