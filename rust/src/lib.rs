@@ -2,15 +2,11 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt::{Display, Formatter};
 
 pub use anyhow;
-pub use bytes;
-pub use bytes::Bytes;
+pub use bytes::{self, Bytes};
 pub use guest::do_request;
-pub use http::uri;
-pub use http::uri::Uri;
+pub use http::{uri, uri::Uri};
 pub use message::{Method, Request, Response, Scheme};
-pub use protobuf;
-pub use protobuf::{CodedOutputStream, Message};
-use protobuf::ProtobufEnum;
+pub use protobuf::{self, CodedOutputStream, Message, ProtobufEnum};
 pub use wasp_macros::handler;
 
 pub mod errors;

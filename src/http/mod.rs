@@ -9,6 +9,12 @@ mod server;
 
 struct Method(wasp::Method);
 
+impl Method {
+    pub fn as_str(&self) -> &'static str {
+        wasp::ProtobufEnum::descriptor(&self.0).name()
+    }
+}
+
 impl Deref for Method {
     type Target = wasp::Method;
 

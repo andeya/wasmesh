@@ -25,7 +25,7 @@ structopt = { version = "0.3", features = ["color"] }
 anyhow = "1"
 wasmer-compiler-llvm = { version = "2.0.0", optional = true }
 wasmer-compiler-cranelift = { version = "2.0.0", optional = true }
-attohttpc = "0.17"
+ureq = { version = "2.3.0", features = ["tls", "cookies", "charset"] }
 
 [build-dependencies]
 protoc-rust = "2.0"
