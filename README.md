@@ -1,6 +1,6 @@
 # wasp
 
-WebAssembly Service Porter.
+WASP(WebAssembly Service Porter) is a microservice governance framework based on WebAssembly.
 
 ## Install
 

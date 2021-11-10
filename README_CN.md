@@ -1,6 +1,6 @@
 # wasp
-WebAssembly Service Porter.
 
+WASP(WebAssembly Service Porter) 是基于 WebAssembly 的微服务治理框架.
 
 ## Host-Guest 交互设计
 

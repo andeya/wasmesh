@@ -6,6 +6,7 @@ edition = "2021"
 resolver = "2"
 build = "build.rs"
 default-run = "wasp"
+description = "A microservice governance framework based on WebAssembly"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
