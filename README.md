@@ -21,9 +21,7 @@ rustup target add wasm32-wasi
 build example:
 
 ```shell
-git clone https://github.com/henrylee2cn/wasp.git
-cd wasp/rust/simple
-cargo build --release
+cargo build-simple-release
 ```
 
 serve it:
@@ -39,7 +37,8 @@ cargo run-simple-release
 - Directly use the command line:
 
 ```shell
-wasp serve --threads=16 --http=127.0.0.1:9090 rust/examples/simple/target/wasm32-wasi/release/simple.wasm
+cargo build --target wasm32-wasi --package simple --target-dir rust/examples/target --release
+wasp serve --threads=16 --http=127.0.0.1:9090 rust/examples/target/wasm32-wasi/release/simple.wasm
 ```
 
 ## Benchmark

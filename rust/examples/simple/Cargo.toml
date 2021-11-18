@@ -10,5 +10,5 @@ authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
 crate-type = ['cdylib']
 
 [dependencies]
-wasp = { path = "../.." }
+wasp = { path = "../../wasp" }
 rand = "0.8.4"

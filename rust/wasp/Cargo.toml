@@ -10,7 +10,7 @@ authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_repr = "0.1"
-wasp-macros = { path = "wasp-macros" }
+wasp-macros = { path = "../wasp-macros" }
 protobuf = { version = "2", features = ["with-bytes"] }
 bytes = { version = "1", features = ["serde"] }
 anyhow = "1"
@@ -19,7 +19,3 @@ http = "0.2.4"
 [features]
 default = ["with-serde"]
 with-serde = []
-
-[workspace]
-members = ["wasp-macros"]
-exclude = ["examples"]

@@ -19,7 +19,7 @@ hyper = { version = "0.14.9", features = ["full"] }
 num_cpus = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 rand = "0.8.4"
-wasp = { path = "rust" }
+wasp = { path = "rust/wasp" }
 pretty_env_logger = "0.4"
 wapm-cli = "0.5.1"
 structopt = { version = "0.3", features = ["color"] }
@@ -42,3 +42,10 @@ path = "src/bin/wasp.rs"
 [[bin]]
 name = "wasp-bench"
 path = "src/bin/wasp-bench.rs"
+
+[workspace]
+members = [
+    "rust/wasp-macros",
+    "rust/wasp",
+    "rust/examples/simple",
+]
