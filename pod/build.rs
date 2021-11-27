@@ -4,8 +4,9 @@ use protoc_rust::Customize;
 
 fn main() {
     protoc_rust::Codegen::new()
-        .out_dir("service/rust/wasp/src/")
-        .inputs(&["message.proto"])
+        .out_dir("../service/rust/wasmesh/src/")
+        .include("../")
+        .inputs(&["../message.proto"])
         .customize(Customize {
             carllerche_bytes_for_bytes: Some(true),
             serde_derive: Some(true),

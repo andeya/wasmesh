@@ -1,6 +1,6 @@
 [alias]
 install-bundle = "install cargo-bundle"
-build-console = "bundle --release"
+build-ctl = "bundle --release"
 
 [build]
 target-dir = "../target"

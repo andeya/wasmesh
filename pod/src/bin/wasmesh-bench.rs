@@ -2,9 +2,9 @@ use std::thread;
 use std::time::Duration;
 
 use structopt::{clap::AppSettings, StructOpt};
-use wasp::*;
+use wasmesh::*;
 
-use wasp_cli::request;
+use wasmesh_pod::request;
 
 #[derive(StructOpt, Debug, Clone)]
 #[structopt(global_settings = & [AppSettings::VersionlessSubcommands, AppSettings::ColorAuto, AppSettings::ColoredHelp])]

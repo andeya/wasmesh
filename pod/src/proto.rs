@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::net::{AddrParseError, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 use structopt::StructOpt;
-use wasp::*;
+use wasmesh::*;
 
 #[derive(StructOpt, Debug, Clone)]
 pub struct ServeOpt {

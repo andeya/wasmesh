@@ -3,13 +3,13 @@ use crate::*;
 // #[cfg(target_arch = "wasm32")]
 extern "C" {
     /// Recall the next request to the offset position.
-    fn _wasp_recall_request(ctx_id: i64, offset: i32);
+    fn _wasmesh_recall_request(ctx_id: i64, offset: i32);
     /// Send response;
-    fn _wasp_send_response(ctx_id: i64, offset: i32, size: i32);
+    fn _wasmesh_send_response(ctx_id: i64, offset: i32, size: i32);
     /// Send request, return response msg size;
-    fn _wasp_send_request(ctx_id: i64, offset: i32, size: i32) -> i32;
+    fn _wasmesh_send_request(ctx_id: i64, offset: i32, size: i32) -> i32;
     /// Recall the next response to the offset position.
-    fn _wasp_recall_response(ctx_id: i64, offset: i32);
+    fn _wasmesh_recall_response(ctx_id: i64, offset: i32);
 }
 
 pub fn handle_request<F>(ctx_id: i64, size: i32, handler: F)
@@ -21,7 +21,7 @@ pub fn handle_request<F>(ctx_id: i64, size: i32, handler: F)
         if size == 0 {
             Request::default()
         } else {
-            unsafe { _wasp_recall_request(ctx_id, buffer.as_ptr() as i32) };
+            unsafe { _wasmesh_recall_request(ctx_id, buffer.as_ptr() as i32) };
             Request::parse_from_bytes(buffer.as_slice())
                 .unwrap_or_else(|e| {
                     eprintln!("receive request parse_from_bytes error: {}", e);
@@ -42,20 +42,20 @@ pub fn handle_request<F>(ctx_id: i64, size: i32, handler: F)
         resp.write_to_with_cached_sizes(&mut os)
             .or_else(|e| Err(format!("{}", e))).unwrap();
         os.flush().unwrap();
-        unsafe { _wasp_send_response(ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
+        unsafe { _wasmesh_send_response(ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
     } else if !is_oneway {
-        unsafe { _wasp_send_response(ctx_id, 0i32, 0 as i32) };
+        unsafe { _wasmesh_send_response(ctx_id, 0i32, 0 as i32) };
     }
 }
 
 pub fn do_request(ctx_id: i64, req: Request) -> Option<Response> {
     let mut buffer = req.write_to_bytes().unwrap();
-    let size = unsafe { _wasp_send_request(ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
+    let size = unsafe { _wasmesh_send_request(ctx_id, buffer.as_ptr() as i32, buffer.len() as i32) };
     if size <= 0 || req.get_method() == Method::ONEWAY {
         return None
     }
     buffer.resize(size as usize, 0);
-    unsafe { _wasp_recall_response(ctx_id, buffer.as_ptr() as i32) };
+    unsafe { _wasmesh_recall_response(ctx_id, buffer.as_ptr() as i32) };
     Some(Response::parse_from_bytes(buffer.as_slice())
         .unwrap_or_else(|e| {
             eprintln!("receive response parse_from_bytes error: {}", e);

@@ -10,7 +10,7 @@ enum Scheme {
     HTTPS = 1;
     // RPC scheme
     RPC = 2;
-    // wasp name server scheme
+    // wasmesh name server scheme
     WNS = 3;
 }
 

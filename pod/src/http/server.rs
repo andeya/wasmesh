@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use hyper::{Body, Error, Request as HttpRequest, Response as HttpResponse};
 use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
-use wasp::*;
+use wasmesh::*;
 
 use crate::instance::local_instance_ref;
 use crate::proto::write_to_with_cached_sizes;
@@ -67,7 +67,7 @@ async fn handle(req: HttpRequest<Body>) -> Result<HttpResponse<Body>, String> {
     Ok(to_http_response(resp))
 }
 
-fn to_http_response(mut msg: wasp::Response) -> hyper::Response<hyper::Body> {
+fn to_http_response(mut msg: wasmesh::Response) -> hyper::Response<hyper::Body> {
     let mut resp = hyper::Response::builder();
     for x in msg.headers.iter() {
         resp = resp.header(x.0, x.1);
@@ -79,12 +79,12 @@ fn to_http_response(mut msg: wasp::Response) -> hyper::Response<hyper::Body> {
     resp.body(hyper::Body::from(msg.body)).unwrap()
 }
 
-async fn to_request(req: hyper::Request<hyper::Body>) -> wasp::Request {
-    let mut msg = wasp::Request::new();
+async fn to_request(req: hyper::Request<hyper::Body>) -> wasmesh::Request {
+    let mut msg = wasmesh::Request::new();
     msg.set_uri(req.uri().to_string());
     msg.set_method(crate::http::Method::from(req.method().clone()).into());
     let (parts, body) = req.into_parts();
-    let body = hyper::body::to_bytes(body).await.map_or_else(|_| wasp::Bytes::new(), |v| v);
+    let body = hyper::body::to_bytes(body).await.map_or_else(|_| wasmesh::Bytes::new(), |v| v);
     for x in parts.headers.iter() {
         msg.headers.insert(
             x.0.to_string(),

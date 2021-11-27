@@ -1,11 +1,11 @@
-# wasp
+# wasmesh
 
-WASP(WebAssembly Service Porter) is a microservice governance framework based on WebAssembly.
+wasmesh(WebAssembly Service Mesh) is a WebAssembly service mesh framework.
 
 ## Install
 
 ```shell
-cargo install --git https://github.com/henrylee2cn/wasp.git
+cargo install --git https://github.com/henrylee2cn/wasmesh.git
 ```
 
 *Will be installed to `~/.cargo/bin`*
@@ -26,7 +26,7 @@ cargo build-simple-release
 
 serve it:
 
-- In wasp root path, fast run alias:
+- In wasmesh root path, fast run alias:
 
 ```shell
 cargo run-simple-release
@@ -38,7 +38,7 @@ cargo run-simple-release
 
 ```shell
 cargo build --target wasm32-wasi --package simple --target-dir service/rust/examples/target --release
-wasp serve --threads=16 --http=127.0.0.1:9090 service/rust/examples/target/wasm32-wasi/release/simple.wasm
+wasmesh serve --threads=16 --http=127.0.0.1:9090 service/rust/examples/target/wasm32-wasi/release/simple.wasm
 ```
 
 ## Benchmark
@@ -53,4 +53,4 @@ ab -c 100 -n 10000 http://127.0.0.1:9090/
 
 Result: 18K QPS
 
-![](doc/wasp.png)
+![](doc/wasmesh.png)

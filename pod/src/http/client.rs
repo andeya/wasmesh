@@ -1,11 +1,11 @@
-use wasp::Bytes;
+use wasmesh::Bytes;
 
 use crate::http::Method;
 use crate::proto::write_to_vec;
 
 thread_local! {static AGENT: ureq::Agent = ureq::builder().build();}
 
-pub(crate) fn do_request(req: wasp::Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<wasp::Response> {
+pub(crate) fn do_request(req: wasmesh::Request, msg_vec: &mut Vec<u8>) -> anyhow::Result<wasmesh::Response> {
     #[cfg(debug_assertions)] { println!("got req = {:?}", req); }
     let mut builder = AGENT.with(|agent| {
         agent.request(
@@ -23,8 +23,8 @@ pub(crate) fn do_request(req: wasp::Request, msg_vec: &mut Vec<u8>) -> anyhow::R
     Ok(resp)
 }
 
-fn to_response(resp: ureq::Response) -> Result<wasp::Response, ureq::Error> {
-    let mut r = wasp::Response::new();
+fn to_response(resp: ureq::Response) -> Result<wasmesh::Response, ureq::Error> {
+    let mut r = wasmesh::Response::new();
     r.set_status(resp.status() as i32);
     r.set_headers(resp.headers_names().iter().map(|name| (name.clone(), resp.header(&name).unwrap().to_string())).collect());
     r.set_body(Bytes::from(resp.into_string()?));

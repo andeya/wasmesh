@@ -4,7 +4,7 @@ use quote::quote;
 
 /// Entry pointer of function, take function handler as argument.
 ///
-/// `target fn type: Fn(wasp::Request) -> Option<wasp::Response>`
+/// `target fn type: Fn(wasmesh::Request) -> Option<wasmesh::Response>`
 /// command to check expanded code: `cargo +nightly rustc -- -Zunstable-options --pretty=expanded`
 #[proc_macro_attribute]
 #[cfg(not(test))] // Work around for rust-lang/rust#62127
@@ -14,8 +14,8 @@ pub fn handler(_args: TokenStream, item: TokenStream) -> TokenStream {
     let handler_ident = input.sig.ident;
     let expanded = quote! {
         #[no_mangle]
-        pub extern "C" fn _wasp_guest_handler(ctx_id: i64, size: i32) {
-            wasp::guest::handle_request(ctx_id, size, #handler_ident)
+        pub extern "C" fn _wasmesh_guest_handler(ctx_id: i64, size: i32) {
+            wasmesh::guest::handle_request(ctx_id, size, #handler_ident)
         }
     };
     handler_block.extend(TokenStream::from(expanded));

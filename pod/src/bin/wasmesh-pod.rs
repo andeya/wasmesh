@@ -1,4 +1,4 @@
-//! wasp cli
+//! wasmesh cli
 
 use std::{env, path};
 
@@ -7,8 +7,8 @@ use wapm_cli::commands;
 #[cfg(feature = "update-notifications")]
 use wapm_cli::update_notifier;
 
-use wasp_cli::serve;
-use wasp_cli::ServeOpt;
+use wasmesh_pod::serve;
+use wasmesh_pod::ServeOpt;
 
 #[derive(StructOpt, Debug)]
 #[structopt(global_settings = & [AppSettings::VersionlessSubcommands, AppSettings::ColorAuto, AppSettings::ColoredHelp])]

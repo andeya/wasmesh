@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::thread_local;
 
-use wasp::*;
+use wasmesh::*;
 
 use crate::proto::resize_with_capacity;
 

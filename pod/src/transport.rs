@@ -2,7 +2,7 @@ use std::future::Future;
 use std::net::SocketAddr;
 use std::pin::Pin;
 
-use wasp::*;
+use wasmesh::*;
 
 use crate::instance;
 use crate::proto::{ServeOpt, write_to_vec};
@@ -70,7 +70,7 @@ pub fn serve(serve_options: ServeOpt) -> anyhow::Result<()> {
 
 #[inline]
 pub(crate) fn do_request_from_vec(buffer: &mut Vec<u8>) -> anyhow::Result<usize> {
-    let req = wasp::Request::parse_from_bytes(buffer)?;
+    let req = wasmesh::Request::parse_from_bytes(buffer)?;
     let _ = do_request(req, buffer)?;
     Ok(buffer.len())
 }

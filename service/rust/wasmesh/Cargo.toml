@@ -1,20 +1,20 @@
 [package]
-name = "wasp"
+name = "wasmesh"
 version = "0.1.0"
 edition = "2021"
 resolver = "2"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
-description = "WASP(WebAssembly Service Porter) SDK"
-repository = "https://github.com/henrylee2cn/wasp"
+description = "wasmesh(WebAssembly Service Mesh) SDK"
+repository = "https://github.com/henrylee2cn/wasmesh"
 categories = ["wasm", "web-programming"]
-keywords = ["wasm", "web", "servicemesh", "faas"]
+keywords = ["wasm", "webassembly", "servicemesh", "faas", "web"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_repr = "0.1"
-wasp-macros = { path = "../wasp-macros" }
+wasmesh-macros = { path = "../wasmesh-macros" }
 protobuf = { version = "2", features = ["with-bytes"] }
 bytes = { version = "1", features = ["serde"] }
 anyhow = "1"

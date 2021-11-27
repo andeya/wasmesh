@@ -6,10 +6,10 @@ use std::env;
 
 #[cfg(debug_assertions)]
 use rand::Rng;
-use wasp::*;
+use wasmesh::*;
 
 #[allow(unused_variables)]
-#[wasp::handler]
+#[wasmesh::handler]
 fn handler(ctx_id: i64, req: Request) -> Option<Response> {
     #[cfg(debug_assertions)] {
         println!("Args: {:?}", env::args().collect::<Vec<String>>());
@@ -45,7 +45,7 @@ fn handle_http(ctx_id: i64, req: Request) -> anyhow::Result<Response> {
     #[cfg(debug_assertions)] {
         let mut req2 = Request::new();
         req2.set_method(Method::GET);
-        req2.set_uri(String::from("https://github.com/henrylee2cn/wasp"));
+        req2.set_uri(String::from("https://github.com/henrylee2cn/wasmesh"));
         println!("[WASI-Simple] send HTTP Request2: {:?}", req2);
         let resp2 = do_request(ctx_id, req2).unwrap();
         println!("[WASI-Simple] recv HTTP Response2: {:?}", resp2);

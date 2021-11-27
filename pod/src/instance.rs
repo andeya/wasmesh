@@ -116,30 +116,30 @@ impl Instance {
     }
     fn register_import_object(import_object: &mut ImportObject, store: &Store) {
         import_object.register("env", import_namespace!({
-            "_wasp_recall_request" => Function::new_native(store, |ctx_id: i64, offset: i32| {
+            "_wasmesh_recall_request" => Function::new_native(store, |ctx_id: i64, offset: i32| {
                 recall_data_from_buffer(ctx_id, offset)
             }),
-            "_wasp_send_response" => Function::new_native(store, |ctx_id: i64, offset: i32, size: i32| {
+            "_wasmesh_send_response" => Function::new_native(store, |ctx_id: i64, offset: i32, size: i32| {
                 let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
                 #[cfg(debug_assertions)]
-                println!("_wasp_send_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+                println!("_wasmesh_send_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
                 let ins = instance_ref(thread_id as usize);
                 let _ = ins.use_mut_buffer(ctx_id, size as usize, |buffer|{
                     ins.read_view_bytes(offset as usize, size as usize, buffer);
                     buffer.len()
                 });
             }),
-            "_wasp_send_request" => Function::new_native(store, |ctx_id: i64, offset: i32, size: i32|-> i32 {
+            "_wasmesh_send_request" => Function::new_native(store, |ctx_id: i64, offset: i32, size: i32|-> i32 {
                 let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
                 #[cfg(debug_assertions)]
-                println!("_wasp_send_request: thread_id:{}, ctx_id:{}, offset:{}, size:{}", thread_id, ctx_id, offset, size);
+                println!("_wasmesh_send_request: thread_id:{}, ctx_id:{}, offset:{}, size:{}", thread_id, ctx_id, offset, size);
                 let ins = instance_ref(thread_id as usize);
                 ins.use_mut_buffer(ctx_id, size as usize, |mut buffer|{
                     ins.read_view_bytes(offset as usize, size as usize, buffer);
                     crate::transport::do_request_from_vec(&mut buffer).unwrap()
                 }) as i32
             }),
-            "_wasp_recall_response" => Function::new_native(store, |ctx_id: i64, offset: i32| {
+            "_wasmesh_recall_response" => Function::new_native(store, |ctx_id: i64, offset: i32| {
                 recall_data_from_buffer(ctx_id, offset)
             }),
         }));
@@ -166,12 +166,12 @@ impl Instance {
             if let Err(e) = self
                 .instance
                 .exports
-                .get_native_function::<(i64, i32), ()>("_wasp_guest_handler")
+                .get_native_function::<(i64, i32), ()>("_wasmesh_guest_handler")
                 .unwrap()
                 .call(ctx_id, size)
             {
                 let estr = format!("{:?}", e);
-                eprintln!("call _wasp_guest_handler error: {}", estr);
+                eprintln!("call _wasmesh_guest_handler error: {}", estr);
                 if estr.contains("OOM") {
                     match self.get_memory().grow(1) {
                         Ok(p) => {
@@ -259,7 +259,7 @@ fn current_thread_id() -> usize {
 fn recall_data_from_buffer(ctx_id: i64, offset: i32) {
     let thread_id = Instance::get_thread_id_from_ctx_id(ctx_id);
     #[cfg(debug_assertions)]
-    println!("_wasp_recall_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
+    println!("_wasmesh_recall_response: thread_id:{}, ctx_id:{}, offset:{}", thread_id, ctx_id, offset);
     let ins = instance_ref(thread_id);
     let _ = ins.use_mut_buffer(ctx_id, 0, |data| {
         ins.set_view_bytes(offset as usize, data.iter());

@@ -1,55 +1,11 @@
-[package]
-name = "wasp-cli"
-version = "0.1.0"
-authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
-edition = "2021"
-resolver = "2"
-build = "build.rs"
-default-run = "wasp"
-description = "WASP(WebAssembly Service Porter) is a microservice governance framework based on WebAssembly"
-repository = "https://github.com/henrylee2cn/wasp"
-categories = ["wasm", "web-programming"]
-keywords = ["wasm", "web", "servicemesh", "faas"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-wasmer = "2.0.0"
-wasmer-engine-universal = "2.0.0"
-wasmer-wasi = "2.0.0"
-tokio = { version = "1", features = ["full"] }
-hyper = { version = "0.14.9", features = ["full"] }
-num_cpus = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-rand = "0.8.4"
-wasp = { path = "service/rust/wasp" }
-pretty_env_logger = "0.4"
-wapm-cli = "0.5.1"
-structopt = { version = "0.3", features = ["color"] }
-anyhow = "1"
-wasmer-compiler-llvm = { version = "2.0.0", optional = true }
-wasmer-compiler-cranelift = { version = "2.0.0", optional = true }
-ureq = { version = "2.3.0", features = ["tls", "cookies", "charset"] }
-
-[build-dependencies]
-protoc-rust = "2.0"
-
-[features]
-default = ["wasmer-compiler-cranelift"]
-llvm = ["wasmer-compiler-llvm"]
-
-[[bin]]
-name = "wasp"
-path = "src/bin/wasp.rs"
-
-[[bin]]
-name = "wasp-bench"
-path = "src/bin/wasp-bench.rs"
-
 [workspace]
+resolver = "2"
 members = [
-    "service/rust/wasp-macros",
-    "service/rust/wasp",
+    "pod",
+    "service/rust/wasmesh-macros",
+    "service/rust/wasmesh",
     "service/rust/examples/simple",
 ]
-exclude = ["console"]
+exclude = [
+    "ctl",
+]

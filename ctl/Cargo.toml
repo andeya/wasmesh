@@ -1,13 +1,13 @@
 [package]
-name = "wasp-console"
+name = "wasmesh-ctl"
 version = "0.1.0"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
 edition = "2021"
 resolver = "2"
-description = "WASP(WebAssembly Service Porter) console"
-repository = "https://github.com/henrylee2cn/wasp"
+description = "wasmesh(WebAssembly Service Mesh) control panel"
+repository = "https://github.com/henrylee2cn/wasmesh"
 categories = ["wasm", "web-programming"]
-keywords = ["wasm", "web", "servicemesh", "faas"]
+keywords = ["wasm", "webassembly", "servicemesh", "faas", "web"]
 
 [dependencies]
 iced = { git = "https://github.com/iced-rs/iced.git", branch = "master", features = ["image", "debug"] }
@@ -15,15 +15,13 @@ env_logger = "0.8"
 
 # https://github.com/burtonageo/cargo-bundle
 [package.metadata.bundle]
-identifier = "io.github.henrylee2cn.wasp.console"
+identifier = "io.github.henrylee2cn.wasmesh.console"
 icon = ["icon/*.png"]
 category = "DeveloperTool"
-#short_description = "wasp console"
+#short_description = "wasmesh console"
 #long_description = """
 #A trivial application that just displays a blank window with
 #a title bar.  It serves as an example of an application that
 #can be bundled with cargo-bundle, as well as a test-case for
 #cargo-bundle's support for bundling crate examples.
 #"""
-
-[workspace]
