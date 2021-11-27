@@ -15,7 +15,7 @@ fn main() {
         .run()
         .expect("protoc");
     use std::process::Command;
-    let arg = "cargo build --target wasm32-wasi --package simple --target-dir ../service/rust/examples/target";
+    let arg = "cargo build --target wasm32-wasi --package simple --target-dir service/rust/examples/target";
     let output = Command::new("sh").current_dir("../").arg("-c").arg(&arg).output().expect("Command execution exception error prompt");
     if !output.status.success() {
         eprintln!("$ {}:\n{}", arg, String::from_utf8(output.stderr).unwrap());
