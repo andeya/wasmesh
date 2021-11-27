@@ -5,6 +5,7 @@ edition = "2021"
 resolver = "2"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
 description = "wasmesh(WebAssembly Service Mesh) SDK proc-macro"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/henrylee2cn/wasmesh"
 categories = ["wasm", "web-programming"]
 keywords = ["wasm", "webassembly", "servicemesh", "faas", "web"]

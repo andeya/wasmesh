@@ -6,6 +6,7 @@ edition = "2021"
 resolver = "2"
 default-run = "wasmesh-pod"
 description = "wasmesh(WebAssembly Service Mesh) is a WebAssembly service mesh framework."
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/henrylee2cn/wasmesh"
 categories = ["wasm", "web-programming"]
 keywords = ["wasm", "webassembly", "servicemesh", "faas", "web"]
@@ -22,7 +23,7 @@ hyper = { version = "0.14.9", features = ["full"] }
 num_cpus = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 rand = "0.8.4"
-wasmesh = { path = "../service/rust/wasmesh", version = "*" }
+wasmesh = { path = "../service/rust/wasmesh", version = "0.1.0" }
 pretty_env_logger = "0.4"
 wapm-cli = "0.5.1"
 structopt = { version = "0.3", features = ["color"] }

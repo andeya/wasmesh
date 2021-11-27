@@ -5,7 +5,9 @@ wasmesh(WebAssembly Service Mesh) is a WebAssembly service mesh framework.
 ## Install
 
 ```shell
-cargo install --git https://github.com/henrylee2cn/wasmesh.git
+git clone https://github.com/henrylee2cn/wasmesh.git
+cd wasmesh
+cargo install --path pod
 ```
 
 *Will be installed to `~/.cargo/bin`*
