@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 resolver = "2"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
+description = "WASP(WebAssembly Service Porter) SDK"
+repository = "https://github.com/henrylee2cn/wasp"
+categories = ["wasm", "web-programming"]
+keywords = ["wasm", "web", "servicemesh", "faas"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

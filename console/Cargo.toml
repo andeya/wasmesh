@@ -5,6 +5,9 @@ authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
 edition = "2021"
 resolver = "2"
 description = "WASP(WebAssembly Service Porter) console"
+repository = "https://github.com/henrylee2cn/wasp"
+categories = ["wasm", "web-programming"]
+keywords = ["wasm", "web", "servicemesh", "faas"]
 
 [dependencies]
 iced = { git = "https://github.com/iced-rs/iced.git", branch = "master", features = ["image", "debug"] }

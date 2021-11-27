@@ -6,7 +6,10 @@ edition = "2021"
 resolver = "2"
 build = "build.rs"
 default-run = "wasp"
-description = "A microservice governance framework based on WebAssembly"
+description = "WASP(WebAssembly Service Porter) is a microservice governance framework based on WebAssembly"
+repository = "https://github.com/henrylee2cn/wasp"
+categories = ["wasm", "web-programming"]
+keywords = ["wasm", "web", "servicemesh", "faas"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
