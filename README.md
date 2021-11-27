@@ -7,7 +7,7 @@ wasmesh(WebAssembly Service Mesh) is a WebAssembly service mesh framework.
 ```shell
 git clone https://github.com/henrylee2cn/wasmesh.git
 cd wasmesh
-cargo install --path pod
+cargo install --path=pod
 ```
 
 *Will be installed to `~/.cargo/bin`*
@@ -23,7 +23,7 @@ rustup target add wasm32-wasi
 build example:
 
 ```shell
-cargo build-simple-release
+cargo build-simple --release
 ```
 
 serve it:
@@ -39,8 +39,8 @@ cargo run-simple-release
 - Directly use the command line:
 
 ```shell
-cargo build --target wasm32-wasi --package simple --target-dir service/rust/examples/target --release
-wasmesh serve --threads=16 --http=127.0.0.1:9090 service/rust/examples/target/wasm32-wasi/release/simple.wasm
+cargo build --target=wasm32-wasi --package=simple --target-dir=service/rust/examples/target --release
+wasmesh-pod serve --threads=16 --http=127.0.0.1:9090 service/rust/examples/target/wasm32-wasi/release/simple.wasm
 ```
 
 ## Benchmark
