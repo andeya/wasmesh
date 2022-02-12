@@ -36,7 +36,8 @@ ureq = { version = "2.3.0", features = ["tls", "cookies", "charset"] }
 protoc-rust = "2.0"
 
 [features]
-default = ["wasmer-compiler-cranelift"]
+default = ["cranelift"]
+cranelift = ["wasmer-compiler-cranelift"]
 llvm = ["wasmer-compiler-llvm"]
 
 [[bin]]
