@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use wasmer::{Function, FunctionType, import_namespace, ImportObject, Memory, MemoryView, Module, Store};
-#[cfg(feature = "cranelift")]
+#[cfg(not(feature = "llvm"))]
 use wasmer_compiler_cranelift::Cranelift;
 #[cfg(feature = "llvm")]
 use wasmer_compiler_llvm::LLVM;
