@@ -13,8 +13,11 @@ pub fn vm_handler(args: TokenStream, item: TokenStream) -> TokenStream {
     let mut handler_block = item.clone();
     let input = syn::parse_macro_input!(item as syn::ItemFn);
     let handler_ident = input.sig.ident;
-    let method = args.to_string();
-    let fn_ident = Ident::new(&format!("hdl_{}_{}", method.parse::<u16>().unwrap(), handler_ident), handler_ident.span());
+    let method = args.to_string().parse::<i32>().unwrap();
+    if method < 0 {
+        panic!("vm_handler: method({})<0", method);
+    }
+    let fn_ident = Ident::new(&format!("hdl_{}_{}", method, handler_ident), handler_ident.span());
     let expanded = quote! {
         fn #fn_ident(args: &wasmesh_abi::Any) -> wasmesh_abi::Result<wasmesh_abi::Any> {
             let args: TestArgs = wasmesh_abi::unpack_any(args)?;
