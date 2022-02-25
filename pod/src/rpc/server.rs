@@ -113,7 +113,7 @@ async fn handle(req_vec: &Vec<u8>) -> Result<Vec<u8>, String> {
         req_vec.len()
     });
 
-    ins.call_guest_handler(ctx_id, buffer_len as i32);
+    ins.call_wasm_main(ctx_id, buffer_len as i32);
 
     Ok(ins.take_buffer(ctx_id).unwrap_or(vec![]))
 }

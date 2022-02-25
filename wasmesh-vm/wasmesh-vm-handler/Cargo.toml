@@ -1,0 +1,21 @@
+[package]
+name = "wasmesh-vm-handler"
+version = "0.1.0"
+edition = "2021"
+resolver = "2"
+authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
+description = "wasmesh(WebAssembly Service Mesh) VM proc-macro"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/henrylee2cn/wasmesh"
+categories = ["wasm", "web-programming"]
+keywords = ["wasm", "webassembly", "servicemesh", "faas", "web"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0.7"
+

@@ -161,17 +161,17 @@ impl Instance {
     pub(crate) fn take_buffer(&self, ctx_id: i64) -> Option<Vec<u8>> {
         self.message_cache.borrow_mut().remove(&ctx_id)
     }
-    pub(crate) fn call_guest_handler(&self, ctx_id: i64, size: i32) {
+    pub(crate) fn call_wasm_main(&self, ctx_id: i64, size: i32) {
         loop {
             if let Err(e) = self
                 .instance
                 .exports
-                .get_native_function::<(i64, i32), ()>("_wasmesh_guest_handler")
+                .get_native_function::<(i64, i32), ()>("_wasmesh_wasm_main")
                 .unwrap()
                 .call(ctx_id, size)
             {
                 let estr = format!("{:?}", e);
-                eprintln!("call _wasmesh_guest_handler error: {}", estr);
+                eprintln!("call _wasmesh_wasm_main error: {}", estr);
                 if estr.contains("OOM") {
                     match self.get_memory().grow(1) {
                         Ok(p) => {

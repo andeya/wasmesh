@@ -8,4 +8,6 @@ members = [
 ]
 exclude = [
     "ctl",
+    "wasmesh-abi",
+    "wasmesh-vm",
 ]

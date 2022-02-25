@@ -53,7 +53,7 @@ async fn handle(req: HttpRequest<Body>) -> Result<HttpResponse<Body>, String> {
         write_to_with_cached_sizes(&req, buffer)
     });
 
-    ins.call_guest_handler(ctx_id, buffer_len as i32);
+    ins.call_wasm_main(ctx_id, buffer_len as i32);
     // println!("========= thread_id={}, ctx_id={}", thread_id, ctx_id);
 
     let buffer = ins.take_buffer(ctx_id).unwrap_or(vec![]);

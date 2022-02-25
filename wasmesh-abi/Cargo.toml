@@ -1,0 +1,14 @@
+[package]
+name = "wasmesh-abi"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+protobuf = { version = "2", features = ["with-bytes"] }
+anyhow = "1"
+wasmesh-abi-entry = { path = "../wasmesh-abi/wasmesh-abi-entry" }
+
+[build-dependencies]
+protoc-rust = "2.0"
