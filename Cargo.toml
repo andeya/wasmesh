@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "wasmesh-pod",
-    "wasm-service",
+    "wasmesh-service",
     "wasmesh-ctl",
 ]
 exclude = [
