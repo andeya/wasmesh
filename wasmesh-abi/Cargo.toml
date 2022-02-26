@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 protobuf = { version = "2", features = ["with-bytes"] }
 anyhow = "1"
-wasmesh-abi-entry = { path = "../wasmesh-abi/wasmesh-abi-entry" }
+wasmesh-macros = { path = "../wasmesh-macros" }
 
 [build-dependencies]
 protoc-rust = "2.0"

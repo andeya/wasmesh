@@ -1,10 +1,10 @@
 [package]
-name = "wasmesh-abi-entry"
+name = "wasmesh-macros"
 version = "0.1.0"
 edition = "2021"
 resolver = "2"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
-description = "wasmesh(WebAssembly Service Mesh) ABI proc-macro"
+description = "wasmesh(WebAssembly Service Mesh) proc-macro"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/henrylee2cn/wasmesh"
 categories = ["wasm", "web-programming"]

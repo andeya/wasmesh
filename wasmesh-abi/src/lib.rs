@@ -3,6 +3,7 @@
 pub use abi::*;
 pub use types::*;
 pub use wasm::*;
+pub use wasmesh_macros::wasm_entry;
 
 pub mod abi;
 pub mod types;

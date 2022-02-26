@@ -17,6 +17,7 @@ anyhow = "1"
 protobuf = { version = "2", features = ["with-bytes"] }
 lazy_static = "1.4.0"
 wasmesh-abi = { path = "../wasmesh-abi" }
-wasmesh-vm-handler = { path = "./wasmesh-vm-handler" }
+wasmesh-macros = { path = "../wasmesh-macros" }
+inventory = "0.2.2"
 
 [features]

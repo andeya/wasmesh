@@ -1,7 +1,6 @@
-#![feature(unboxed_closures, fn_traits, thread_id_value)]
+#![feature(unboxed_closures, fn_traits, thread_id_value, const_fn_fn_ptr_basics)]
 
 pub use sandbox::*;
-pub use wasmesh_vm_handler::*;
 
 pub mod handler;
 mod sandbox;

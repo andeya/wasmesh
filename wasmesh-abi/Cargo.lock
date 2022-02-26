@@ -185,11 +185,11 @@ dependencies = [
  "anyhow",
  "protobuf",
  "protoc-rust",
- "wasmesh-abi-entry",
+ "wasmesh-macros",
 ]
 
 [[package]]
-name = "wasmesh-abi-entry"
+name = "wasmesh-macros"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",
