@@ -17,3 +17,6 @@ message OutResult {
   string msg = 2;
   google.protobuf.Any data = 3;
 }
+
+// Empty empty data
+message Empty {}

@@ -1,5 +1,6 @@
 use std::convert::Infallible;
 use std::fmt::Formatter;
+use std::mem;
 use std::ops::FromResidual;
 
 pub use protobuf::{CodedOutputStream, Message, ProtobufEnum};
@@ -95,9 +96,15 @@ impl<R: Message> From<OutResult> for Result<R> {
 }
 
 impl InArgs {
-    pub fn get_args<R: Message>(in_args: InArgs) -> Result<R> {
-        in_args.get_data()
-               .unpack::<R>()?
+    pub fn try_new<M: Message>(method: Method, data: M) -> Result<InArgs> {
+        let mut args = InArgs::new();
+        args.set_method(method);
+        args.set_data(pack_any(data)?);
+        Ok(args)
+    }
+    pub fn get_args<R: Message>(&self) -> Result<R> {
+        self.get_data()
+            .unpack::<R>()?
             .map_or_else(
                 || ERR_CODE_PROTO.to_result("protobuf: the message type does not match the in_args"),
                 |data| Ok(data),
@@ -113,8 +120,16 @@ pub fn unpack_any<R: Message>(data: &Any) -> Result<R> {
         )
 }
 
-pub fn pack_any<R: Message>(data: &R) -> Result<Any> {
-    Ok(Any::pack(data)?)
+pub fn pack_any<R: Message>(mut data: R) -> Result<Any> {
+    if data.as_any().is::<Any>() {
+        Ok(unsafe { mem::take(&mut *(&mut data as *mut dyn core::any::Any as *mut Any)) })
+    } else {
+        Ok(Any::pack(&data)?)
+    }
+}
+
+pub fn pack_empty() -> Result<Any> {
+    Ok(Any::pack(&Empty::new())?)
 }
 
 impl From<CodeMsg> for OutResult {
@@ -134,13 +149,12 @@ impl From<Any> for OutResult {
     }
 }
 
-
 impl<R: Message> From<Result<R>> for OutResult {
     fn from(v: Result<R>) -> Self {
         match v {
             Ok(data) => {
                 let mut res = OutResult::new();
-                match Any::pack(&data) {
+                match pack_any(data) {
                     Ok(data) => {
                         res.set_data(data);
                     }

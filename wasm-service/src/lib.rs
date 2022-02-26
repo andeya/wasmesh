@@ -7,7 +7,6 @@ pub use guest::do_request;
 pub use http::{uri, uri::Uri};
 pub use message::{Method, Request, Response, Scheme};
 pub use protobuf::{self, CodedOutputStream, Message, ProtobufEnum};
-pub use wasmesh_macros::handler;
 
 pub mod errors;
 pub mod guest;

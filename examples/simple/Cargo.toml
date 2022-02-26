@@ -11,5 +11,5 @@ publish = false
 crate-type = ['cdylib']
 
 [dependencies]
-wasmesh = { path = "../../wasmesh" }
+wasmesh-abi = { path = "../../wasmesh-abi" }
 rand = "0.8.4"

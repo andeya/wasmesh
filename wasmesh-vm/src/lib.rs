@@ -1,8 +1,9 @@
 #![feature(unboxed_closures, fn_traits, thread_id_value, const_fn_fn_ptr_basics)]
 
+pub use handler::*;
 pub use sandbox::*;
 
-pub mod handler;
+mod handler;
 mod sandbox;
 
 #[cfg(test)]

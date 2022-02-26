@@ -22,7 +22,7 @@ impl HandlerAPI {
     pub fn register(&self) {
         set_handler(self.method, self.handler)
     }
-    pub fn pack_any<R: Message>(data: &R) -> Result<Any> {
+    pub fn pack_any<R: Message>(data: R) -> Result<Any> {
         pack_any(data)
     }
     pub fn unpack_any<R: Message>(data: &Any) -> Result<R> {

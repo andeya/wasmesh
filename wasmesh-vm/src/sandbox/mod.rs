@@ -8,7 +8,8 @@ pub fn load_wasm(wasm_info: WasmInfo) -> Result<()> {
     instance::load(&wasm_info, |_ins| -> Result<()>{ Ok(()) })
 }
 
-pub fn call_wasm<R: Message>(wasm_info: WasmInfo, guest_args: InArgs) -> Result<R> {
+pub fn call_wasm<A: Message, R: Message>(wasm_info: WasmInfo, method: Method, data: A) -> Result<R> {
+    let guest_args = InArgs::try_new(method, data)?;
     instance::load(&wasm_info, |ins| -> Result<R>{
         let ctx_id = ins.gen_ctx_id();
         #[cfg(debug_assertions)] println!("ctx_id={}, guest_args={:?}", ctx_id, guest_args);
