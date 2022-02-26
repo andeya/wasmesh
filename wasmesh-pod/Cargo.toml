@@ -1,6 +1,6 @@
 [package]
 name = "wasmesh-pod"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
 edition = "2021"
 resolver = "2"
@@ -15,28 +15,17 @@ exclude = ["build.rs"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wasmer = "2.0.0"
-wasmer-engine-universal = "2.0.0"
-wasmer-wasi = "2.0.0"
-wasmer-compiler-llvm = { version = "2.0.0", optional = true }
-wasmer-compiler-cranelift = { version = "2.0.0", optional = true }
+wasmesh-proto = "0.2.0"
+wasmy-vm = "0.2.3"
 tokio = { version = "1", features = ["full"] }
 hyper = { version = "0.14.9", features = ["full"] }
 num_cpus = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 rand = "0.8.4"
 pretty_env_logger = "0.4"
-wapm-cli = "0.5.1"
 structopt = { version = "0.3", features = ["color"] }
-anyhow = "1"
 ureq = { version = "2.3.0", features = ["tls", "cookies", "charset"] }
-
-[build-dependencies]
-protoc-rust = "2.0"
-
-[features]
-default = ["wasmer-compiler-cranelift"]
-llvm = ["wasmer-compiler-llvm"]
+anyhow = "1"
 
 [[bin]]
 name = "wasmesh-pod"

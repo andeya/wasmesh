@@ -1,14 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
+    "wasmesh",
     "wasmesh-pod",
-    "wasmesh-service",
+    "wasmesh-proto",
     "wasmesh-ctl",
 ]
 exclude = [
-    "wasmesh-abi",
-    "wasmesh-vm",
-    "wasmesh-macros",
     "examples/simple",
-    "examples/vm",
 ]

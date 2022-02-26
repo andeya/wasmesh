@@ -3,13 +3,12 @@ use std::fmt::{Display, Formatter};
 
 pub use anyhow;
 pub use bytes::{self, Bytes};
-pub use guest::do_request;
 pub use http::{uri, uri::Uri};
-pub use message::{Method, Request, Response, Scheme};
 pub use protobuf::{self, CodedOutputStream, Message, ProtobufEnum};
 
+pub use message::{Method, Request, Response, Scheme};
+
 pub mod errors;
-pub mod guest;
 mod message;
 
 impl Display for Scheme {

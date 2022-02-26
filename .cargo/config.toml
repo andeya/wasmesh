@@ -1,3 +1,5 @@
+paths = ["./", "/Users/henrylee2cn/rust/wasmy/"]
+
 [alias]
 build-pod = "build --bin=wasmesh-pod"
 build-simple = "build --target=wasm32-wasi --package=simple --target-dir=service/rust/examples/target"

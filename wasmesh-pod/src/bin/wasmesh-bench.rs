@@ -2,9 +2,6 @@ use std::thread;
 use std::time::Duration;
 
 use structopt::{clap::AppSettings, StructOpt};
-use wasmesh::*;
-
-use wasmesh_pod::request;
 
 #[derive(StructOpt, Debug, Clone)]
 #[structopt(global_settings = & [AppSettings::VersionlessSubcommands, AppSettings::ColorAuto, AppSettings::ColoredHelp])]
@@ -15,8 +12,8 @@ struct BenchArgs {
     /// Number of multiple requests to make at a time
     #[structopt(long, short = "c", default_value = "10")]
     concurrency: u64,
-    /// HTTP/RPC URI: [http|rpc]://hostname:port/path
-    uri: String,
+    /// HTTP URL: http://hostname:port/path
+    url: String,
 }
 
 fn main() {
@@ -57,14 +54,5 @@ fn main() {
 }
 
 fn do_request(args: &BenchArgs) -> bool {
-    let mut req = Request::new();
-    req.set_uri(args.uri.clone());
-    request(req)
-        .map_or_else(|e| {
-            eprintln!("{}", e);
-            false
-        }, |_resp| {
-            // println!("{:?}", resp);
-            true
-        })
+    false
 }

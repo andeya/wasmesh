@@ -1,8 +1,7 @@
-pub use crate::proto::ServeOpt;
-pub use crate::transport::{request, serve};
+pub use crate::app::*;
 
-mod transport;
+mod app;
 mod http;
 mod proto;
 mod ns;
-mod rpc;
+mod runtime;

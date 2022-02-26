@@ -1,10 +1,10 @@
 [package]
 name = "wasmesh"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 resolver = "2"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
-description = "wasmesh(WebAssembly Service Mesh) SDK"
+description = "wasmesh(WebAssembly Service Mesh) service SDK"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/henrylee2cn/wasmesh"
 categories = ["wasm", "web-programming"]
@@ -13,6 +13,7 @@ keywords = ["wasm", "webassembly", "servicemesh", "faas", "web"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+wasmy-abi = "0.2.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_repr = "0.1"
 protobuf = { version = "2", features = ["with-bytes"] }
@@ -23,3 +24,6 @@ http = "0.2.4"
 [features]
 default = ["with-serde"]
 with-serde = []
+
+[build-dependencies]
+protoc-rust = "2.0"

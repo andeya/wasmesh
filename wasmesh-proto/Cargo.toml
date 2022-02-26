@@ -1,21 +1,22 @@
 [package]
-name = "wasmesh-macros"
-version = "0.1.0"
+name = "wasmesh-proto"
 edition = "2021"
+version = "0.2.0"
 resolver = "2"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
-description = "wasmesh(WebAssembly Service Mesh) proc-macro"
+description = "wasmesh(WebAssembly Service Mesh) protocol definition"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/henrylee2cn/wasmesh"
 categories = ["wasm", "web-programming"]
 keywords = ["wasm", "webassembly", "servicemesh", "faas", "web"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-proc-macro = true
 
 [dependencies]
-syn = { version = "1.0", features = ["full"] }
-quote = "1.0"
-proc-macro2 = "1.0.7"
+wasmy-abi = "0.2.3"
+protobuf = { version = "2", features = ["with-bytes"] }
+bytes = "1.0"
+hyper = { version = "0.14.9", features = ["full"] }
 
+[build-dependencies]
+protoc-rust = "2.0"

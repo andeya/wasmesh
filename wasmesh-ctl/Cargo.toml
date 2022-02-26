@@ -1,6 +1,6 @@
 [package]
 name = "wasmesh-ctl"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["henrylee2cn <henrylee2cn@gmail.com>"]
 edition = "2021"
 resolver = "2"
