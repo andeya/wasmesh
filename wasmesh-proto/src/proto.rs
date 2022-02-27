@@ -532,8 +532,7 @@ impl ::protobuf::reflect::ProtobufValue for HttpResponse {
 #[derive(Clone,PartialEq,Eq,Debug,Hash)]
 #[cfg_attr(feature = "with-serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum VmMethod {
-    V_TEST = 0,
-    V_HTTP = 1,
+    V_HTTP = 0,
 }
 
 impl ::protobuf::ProtobufEnum for VmMethod {
@@ -543,15 +542,13 @@ impl ::protobuf::ProtobufEnum for VmMethod {
 
     fn from_i32(value: i32) -> ::std::option::Option<VmMethod> {
         match value {
-            0 => ::std::option::Option::Some(VmMethod::V_TEST),
-            1 => ::std::option::Option::Some(VmMethod::V_HTTP),
+            0 => ::std::option::Option::Some(VmMethod::V_HTTP),
             _ => ::std::option::Option::None
         }
     }
 
     fn values() -> &'static [Self] {
         static values: &'static [VmMethod] = &[
-            VmMethod::V_TEST,
             VmMethod::V_HTTP,
         ];
         values
@@ -570,7 +567,7 @@ impl ::std::marker::Copy for VmMethod {
 
 impl ::std::default::Default for VmMethod {
     fn default() -> Self {
-        VmMethod::V_TEST
+        VmMethod::V_HTTP
     }
 }
 
@@ -583,8 +580,7 @@ impl ::protobuf::reflect::ProtobufValue for VmMethod {
 #[derive(Clone,PartialEq,Eq,Debug,Hash)]
 #[cfg_attr(feature = "with-serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum WasmMethod {
-    W_TEST = 0,
-    W_HTTP = 1,
+    W_HTTP = 0,
 }
 
 impl ::protobuf::ProtobufEnum for WasmMethod {
@@ -594,15 +590,13 @@ impl ::protobuf::ProtobufEnum for WasmMethod {
 
     fn from_i32(value: i32) -> ::std::option::Option<WasmMethod> {
         match value {
-            0 => ::std::option::Option::Some(WasmMethod::W_TEST),
-            1 => ::std::option::Option::Some(WasmMethod::W_HTTP),
+            0 => ::std::option::Option::Some(WasmMethod::W_HTTP),
             _ => ::std::option::Option::None
         }
     }
 
     fn values() -> &'static [Self] {
         static values: &'static [WasmMethod] = &[
-            WasmMethod::W_TEST,
             WasmMethod::W_HTTP,
         ];
         values
@@ -621,7 +615,7 @@ impl ::std::marker::Copy for WasmMethod {
 
 impl ::std::default::Default for WasmMethod {
     fn default() -> Self {
-        WasmMethod::W_TEST
+        WasmMethod::W_HTTP
     }
 }
 
@@ -714,13 +708,12 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x05R\x06status\x12:\n\x07headers\x18\x02\x20\x03(\x0b2\x20.proto.HttpRe\
     sponse.HeadersEntryR\x07headers\x12\x12\n\x04body\x18\x03\x20\x01(\x0cR\
     \x04body\x1a:\n\x0cHeadersEntry\x12\x10\n\x03key\x18\x01\x20\x01(\tR\x03\
-    key\x12\x14\n\x05value\x18\x02\x20\x01(\tR\x05value:\x028\x01*\"\n\x08Vm\
-    Method\x12\n\n\x06V_TEST\x10\0\x12\n\n\x06V_HTTP\x10\x01*$\n\nWasmMethod\
-    \x12\n\n\x06W_TEST\x10\0\x12\n\n\x06W_HTTP\x10\x01*n\n\nHttpMethod\x12\
-    \x07\n\x03GET\x10\0\x12\x08\n\x04HEAD\x10\x01\x12\x08\n\x04POST\x10\x02\
-    \x12\x07\n\x03PUT\x10\x03\x12\n\n\x06DELETE\x10\x04\x12\x0b\n\x07CONNECT\
-    \x10\x05\x12\x0b\n\x07OPTIONS\x10\x06\x12\t\n\x05TRACE\x10\x07\x12\t\n\
-    \x05PATCH\x10\x08b\x06proto3\
+    key\x12\x14\n\x05value\x18\x02\x20\x01(\tR\x05value:\x028\x01*\x16\n\x08\
+    VmMethod\x12\n\n\x06V_HTTP\x10\0*\x18\n\nWasmMethod\x12\n\n\x06W_HTTP\
+    \x10\0*n\n\nHttpMethod\x12\x07\n\x03GET\x10\0\x12\x08\n\x04HEAD\x10\x01\
+    \x12\x08\n\x04POST\x10\x02\x12\x07\n\x03PUT\x10\x03\x12\n\n\x06DELETE\
+    \x10\x04\x12\x0b\n\x07CONNECT\x10\x05\x12\x0b\n\x07OPTIONS\x10\x06\x12\t\
+    \n\x05TRACE\x10\x07\x12\t\n\x05PATCH\x10\x08b\x06proto3\
 ";
 
 static file_descriptor_proto_lazy: ::protobuf::rt::LazyV2<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::rt::LazyV2::INIT;

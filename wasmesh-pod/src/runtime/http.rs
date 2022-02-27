@@ -4,7 +4,8 @@ use wasmesh_proto::*;
 
 thread_local! {static AGENT: ureq::Agent = ureq::builder().build();}
 
-#[vm_handler(1)]
+// wasmesh_pod::VmMethod::V_HTTP
+#[vm_handler(0)]
 fn request(req: HttpRequest) -> Result<HttpResponse> {
     #[cfg(debug_assertions)]  println!("http: got request = {:?}", req);
     let mut builder = AGENT.with(|agent| {

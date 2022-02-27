@@ -13,7 +13,7 @@ keywords = ["wasm", "webassembly", "servicemesh", "faas", "web"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wasmy-abi = "0.2.3"
+wasmy-abi = "0.3.0"
 protobuf = { version = "2", features = ["with-bytes"] }
 bytes = "1.0"
 hyper = { version = "0.14.9", features = ["full"] }

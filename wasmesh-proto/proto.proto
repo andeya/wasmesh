@@ -7,13 +7,11 @@ package proto;
 
 
 enum VmMethod {
-  V_TEST = 0;
-  V_HTTP = 1;
+  V_HTTP = 0;
 }
 
 enum WasmMethod {
-  W_TEST = 0;
-  W_HTTP = 1;
+  W_HTTP = 0;
 }
 
 enum HttpMethod {
