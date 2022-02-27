@@ -5,7 +5,9 @@ use std::net::{AddrParseError, SocketAddr, SocketAddrV4, SocketAddrV6};
 use structopt::StructOpt;
 use wasmy_vm::{load_wasm, WasmInfo};
 
-use crate::{http, runtime};
+use crate::http;
+// make sure submit runtime handlers
+#[allow(unused_imports)]use crate::runtime as _;
 
 #[derive(StructOpt, Debug, Clone)]
 pub struct ServeOpt {
@@ -78,7 +80,6 @@ thread_local! {
 }
 
 pub fn serve(serve_options: ServeOpt) -> anyhow::Result<()> {
-    runtime::init();
     let mut builder = tokio::runtime::Builder::new_multi_thread();
     builder.worker_threads(serve_options.get_worker_threads());
     builder.enable_all()
@@ -109,6 +110,6 @@ pub fn serve(serve_options: ServeOpt) -> anyhow::Result<()> {
                    //     }
                    // },
                );
-               Ok(())
-           })
+            Ok(())
+        })
 }
